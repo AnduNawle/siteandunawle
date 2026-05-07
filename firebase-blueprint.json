@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "JoinRequest": {
+      "title": "Demande d'Adhésion",
+      "description": "Représente un citoyen souhaitant rejoindre le parti.",
+      "type": "object",
+      "properties": {
+        "firstname": { "type": "string" },
+        "lastname": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "locality": { "type": "string" },
+        "profession": { "type": "string" },
+        "engagementType": { "type": "string", "enum": ["sympathisant", "membre", "benevole", "responsable_local"] },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "contacted", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["firstname", "lastname", "email", "engagementType", "createdAt"]
+    },
+    "ContactMessage": {
+      "title": "Message de Contact",
+      "description": "Message envoyé via le formulaire de contact public.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "subject", "message", "createdAt"]
+    },
+    "Article": {
+      "title": "Article d'Actualité",
+      "description": "Publication du parti visible sur le site public.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "summary": { "type": "string" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "publishedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "content", "status", "createdAt"]
+    },
+    "User": {
+      "title": "Utilisateur Admin",
+      "description": "Profil utilisateur avec accès administratif.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "editor"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
+    "TeamMember": {
+      "title": "Membre de l'Équipe",
+      "description": "Responsable ou figure locale du parti.",
+      "type": "object",
+      "properties": {
+        "firstname": { "type": "string" },
+        "lastname": { "type": "string" },
+        "role": { "type": "string" },
+        "photo": { "type": "string" },
+        "bio": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["firstname", "lastname", "role"]
+    },
+    "Event": {
+      "title": "Événement Politique",
+      "description": "Rencontre, meeting ou conférence programmée.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "eventDate": { "type": "string", "format": "date" },
+        "startTime": { "type": "string" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["upcoming", "cancelled", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "eventDate", "status"]
+    }
+  },
+  "firestore": {
+    "join_requests": {
+      "schema": "JoinRequest",
+      "description": "Collection des demandes d'adhésion."
+    },
+    "contact_messages": {
+      "schema": "ContactMessage",
+      "description": "Collection des messages de citoyens."
+    },
+    "articles": {
+      "schema": "Article",
+      "description": "Collection des articles de presse et actualités."
+    },
+    "events": {
+      "schema": "Event",
+      "description": "Collection des événements du parti."
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection des administrateurs."
+    }
+  }
+}
