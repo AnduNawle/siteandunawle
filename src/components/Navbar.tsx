@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { Menu, X, Users, Heart, Calendar, MessageSquare, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isHome = location.pathname === '/';
+  const bgSolid = scrolled;
+  const textDark = scrolled || !isHome;
 
   const navLinks = [
     { to: '/', label: 'ACCUEIL' },
@@ -25,7 +30,7 @@ export default function Navbar() {
   return (
     <nav className={cn(
       "fixed top-0 w-full z-50 transition-all duration-300",
-      scrolled ? "bg-white shadow-md py-2" : "bg-transparent py-4"
+      bgSolid ? "bg-white shadow-md py-2" : "bg-transparent py-4"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -34,14 +39,14 @@ export default function Navbar() {
                <img 
           src="src/components/images/logo.png" 
           alt="logo" 
-          class="rounded-[10px]"
+          className="rounded-[10px]"
         />
             </div>
             <div className="flex flex-col">
-              <span className={cn("font-bold text-lg leading-none", scrolled ? "text-gray-900" : "text-white")}>
+              <span className={cn("font-bold text-lg leading-none", textDark ? "text-gray-900" : "text-white")}>
                 ANDU NAWLE
               </span>
-              <span className={cn("text-[10px] uppercase tracking-tighter font-medium", scrolled ? "text-gray-500" : "text-blue-100")}>
+              <span className={cn("text-[10px] uppercase tracking-tighter font-medium", textDark ? "text-gray-500" : "text-blue-100")}>
                 La marche des territoires
               </span>
             </div>
@@ -57,7 +62,7 @@ export default function Navbar() {
                   "text-sm font-semibold tracking-wide transition-colors",
                   isActive 
                     ? "text-[#0047AB] border-b-2 border-[#0047AB]" 
-                    : scrolled ? "text-gray-700 hover:text-[#0047AB]" : "text-white hover:text-blue-200"
+                    : textDark ? "text-gray-700 hover:text-[#0047AB]" : "text-white hover:text-blue-200"
                 )}
               >
                 {link.label}
@@ -76,7 +81,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={cn(scrolled ? "text-gray-700" : "text-white")}
+              className={cn(textDark ? "text-gray-700" : "text-white")}
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>

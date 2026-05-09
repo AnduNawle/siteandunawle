@@ -73,7 +73,13 @@ export default function Home() {
       <Hero />
 
       {/* Latest News Section */}
-      <section className="py-20 bg-white">
+      <motion.section 
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="py-20 bg-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -95,27 +101,40 @@ export default function Home() {
                 </div>
               ))
             ) : latestArticles.length > 0 ? (
-              latestArticles.map((article) => (
-                <Link key={article.id} to={`/actualites/${article.slug}`} className="group">
-                  <div className="aspect-video rounded-2xl overflow-hidden mb-6 relative shadow-sm group-hover:shadow-xl transition-all duration-500">
-                    <img 
-                      src={article.image || "https://images.unsplash.com/photo-1540910419892-f0c73255dc1b?q=80&w=2670&auto=format&fit=crop"} 
-                      alt={article.title} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-[#0047AB] uppercase tracking-widest mb-3">
-                    <span className="bg-blue-50 px-2 py-1 rounded">Actu</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <Calendar size={12} /> {article.publishedAt?.toDate ? format(article.publishedAt.toDate(), 'dd MMM yyyy', { locale: fr }) : "N/A"}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#0047AB] transition-colors line-clamp-2 leading-snug">
-                    {article.title}
-                  </h3>
-                </Link>
+              latestArticles.map((article, index) => (
+                <motion.div 
+                  key={article.id} 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <Link to={`/actualites/${article.slug}`} className="group">
+                    <div className="aspect-video rounded-2xl overflow-hidden mb-6 relative shadow-sm group-hover:shadow-xl transition-all duration-500">
+                      <img 
+                        src={article.image || "https://images.unsplash.com/photo-1540910419892-f0c73255dc1b?q=80&w=2670&auto=format&fit=crop"} 
+                        alt={article.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-[#0047AB] uppercase tracking-widest mb-3">
+                      <span className="bg-blue-50 px-2 py-1 rounded">Actu</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="text-gray-500 flex items-center gap-1">
+                        <Calendar size={12} /> {article.publishedAt?.toDate ? format(article.publishedAt.toDate(), 'dd MMM yyyy', { locale: fr }) : "N/A"}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#0047AB] transition-colors line-clamp-2 leading-snug mb-2">
+                      {article.title}
+                    </h3>
+                    {article.summary && (
+                      <p className="text-gray-600 text-sm line-clamp-3">
+                        {article.summary}
+                      </p>
+                    )}
+                  </Link>
+                </motion.div>
               ))
             ) : (
               <div className="col-span-full py-12 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
@@ -130,11 +149,17 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Upcoming Events Section */}
       {upcomingEvents.length > 0 && (
-        <section className="py-20 bg-gray-900 text-white overflow-hidden relative">
+        <motion.section 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="py-20 bg-gray-900 text-white overflow-hidden relative"
+        >
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
@@ -148,8 +173,15 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 flex gap-6 hover:bg-white/10 transition-all group">
+              {upcomingEvents.map((event, idx) => (
+                <motion.div 
+                  key={event.id}
+                  initial={{ opacity: 0, x: idx % 2 === 0 ? -30 : 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + idx * 0.1, duration: 0.5 }}
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 flex gap-6 hover:bg-white/10 transition-all group"
+                >
                   <div className="w-20 h-20 bg-blue-600 text-white rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
                     <span className="text-2xl font-black">{format(new Date(event.eventDate), 'dd')}</span>
                     <span className="text-[10px] font-bold uppercase">{format(new Date(event.eventDate), 'BBB', { locale: fr })}</span>
@@ -161,15 +193,21 @@ export default function Home() {
                       <span className="flex items-center gap-1"><Users size={14} className="text-blue-500" /> {event.location}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* Intro Section */}
-      <section className="py-20 bg-gray-50">
+      <motion.section 
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="py-20 bg-gray-50"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="flex-1">
@@ -200,22 +238,45 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Priorities Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16">
-          <span className="text-[#0047AB] font-bold text-sm uppercase tracking-widest mb-4 block">Notre Programme</span>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-[#0047AB] font-bold text-sm uppercase tracking-widest mb-4 block"
+          >
+            Notre Programme
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4"
+          >
             Nos priorités pour le changement
-          </h2>
-          <div className="w-20 h-1 bg-[#0047AB] mx-auto"></div>
+          </motion.h2>
+          <motion.div 
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="w-20 h-1 bg-[#0047AB] mx-auto"
+          ></motion.div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {priorities.map((item, idx) => (
             <motion.div 
               key={idx}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 + 0.3 }}
               whileHover={{ y: -10 }}
               className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-md"
             >
@@ -246,21 +307,27 @@ export default function Home() {
       {/* Quick CTAs */}
       <section className="bg-[#002B6B] py-12">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-white divide-y md:divide-y-0 md:divide-x divide-blue-800">
-          <Link to="/rejoindre" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group">
-            <Users size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
-            <h3 className="text-lg font-bold">Rejoignez le mouvement</h3>
-            <p className="text-sm text-blue-200">Devenez acteur du changement.</p>
-          </Link>
-          <Link to="/faire-un-don" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group">
-            <Heart size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
-            <h3 className="text-lg font-bold">Faites un don</h3>
-            <p className="text-sm text-blue-200">Soutenez nos actions sur le terrain.</p>
-          </Link>
-          <Link to="/evenements" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group">
-            <Megaphone size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
-            <h3 className="text-lg font-bold">Prochains événements</h3>
-            <p className="text-sm text-blue-200">Consultez notre calendrier politique.</p>
-          </Link>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <Link to="/rejoindre" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group h-full">
+              <Users size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
+              <h3 className="text-lg font-bold">Rejoignez le mouvement</h3>
+              <p className="text-sm text-blue-200">Devenez acteur du changement.</p>
+            </Link>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}>
+            <Link to="/faire-un-don" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group h-full">
+              <Heart size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
+              <h3 className="text-lg font-bold">Faites un don</h3>
+              <p className="text-sm text-blue-200">Soutenez nos actions sur le terrain.</p>
+            </Link>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
+            <Link to="/evenements" className="flex flex-col items-center p-6 hover:bg-blue-800/50 transition-colors group h-full">
+              <Megaphone size={40} className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" />
+              <h3 className="text-lg font-bold">Prochains événements</h3>
+              <p className="text-sm text-blue-200">Consultez notre calendrier politique.</p>
+            </Link>
+          </motion.div>
         </div>
       </section>
     </main>

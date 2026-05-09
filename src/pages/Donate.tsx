@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, ShieldCheck, Zap, Globe, ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function Donate() {
   return (
@@ -13,7 +14,12 @@ export default function Donate() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
             <div className="bg-blue-50 p-8 rounded-3xl border border-blue-100">
               <h3 className="text-2xl font-bold text-[#0047AB] mb-6 flex items-center gap-3">
                 <ShieldCheck /> Pourquoi donner ?
@@ -48,9 +54,14 @@ export default function Donate() {
                 <p className="text-xs text-gray-500 leading-relaxed">Votre don se transforme immédiatement en action concrète.</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden"
+          >
             <div className="p-10">
               <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-gray-900">
                 <Heart className="text-red-500 fill-red-500" /> Formulaire de don
@@ -95,7 +106,7 @@ export default function Donate() {
             <div className="bg-gray-900 p-4 text-center">
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Sécurisé par protocole SSL</p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

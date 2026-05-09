@@ -7,25 +7,56 @@ export default function Hero() {
   return (
     <section className="relative h-screen flex items-center overflow-hidden bg-[#0047AB]">
       {/* Background Overlay with Image placeholder style */}
-      <div className="absolute inset-0 z-0 opacity-60">
+      <div className="absolute inset-0 z-0 opacity-80">
         <img 
           src="src/components/images/back-1.png" 
           alt="Andu Nawle Rally" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0047AB]/60 via-[#0047AB]/30 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0047AB]/40 via-[#0047AB]/10 to-transparent"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
-        <div className="max-w-2xl">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 w-full">
+        <div className="max-w-2xl md:ml-16 lg:ml-32">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6"
           >
-            Ensemble, construisons <br />
-            <span className="text-blue-300">l'avenir de nos territoires</span>
+            {"Ensemble, construisons".split("").map((char, index) => (
+              <motion.span
+                key={`line1-${index}`}
+                animate={{ y: [0, -6, 0] }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: index * 0.08,
+                }}
+                className="inline-block"
+              >
+                {char === " " ? "\u00A0" : char}
+              </motion.span>
+            ))}
+            <br />
+            <span className="text-blue-500">
+              {"l'avenir de nos territoires".split("").map((char, index) => (
+                <motion.span
+                  key={`line2-${index}`}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: ("Ensemble, construisons".length + index) * 0.08,
+                  }}
+                  className="inline-block"
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </span>
           </motion.h1>
           
           <motion.p 

@@ -44,7 +44,12 @@ export default function Contact() {
 
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Info Column */}
-        <div className="lg:col-span-1 space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="lg:col-span-1 space-y-8"
+        >
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
             <h3 className="text-xl font-bold mb-8 text-[#0047AB]">Coordonnées Officielles</h3>
             <div className="space-y-6">
@@ -90,10 +95,15 @@ export default function Contact() {
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Form Column */}
-        <div className="lg:col-span-2">
+        <motion.div 
+          initial={{ opacity: 0, x: 30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="lg:col-span-2"
+        >
           {status === 'success' ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -188,8 +198,28 @@ export default function Contact() {
               </form>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="max-w-7xl mx-auto px-4 mt-16"
+      >
+        <div className="bg-white rounded-3xl p-2 shadow-xl border border-gray-100 h-[400px] overflow-hidden">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15436.438258386!2d-17.472111!3d14.68535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDQxJzA3LjIiTiAxN8KwMjgnMTkuNiJX!5e0!3m2!1sen!2ssn!4v1620000000000!5m2!1sen!2ssn" 
+            width="100%" 
+            height="100%" 
+            style={{ border: 0, borderRadius: '1.5rem' }} 
+            allowFullScreen={true} 
+            loading="lazy" 
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Localisation du Siége"
+          ></iframe>
+        </div>
+      </motion.div>
     </div>
   );
 }

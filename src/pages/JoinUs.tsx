@@ -79,7 +79,12 @@ export default function JoinUs() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+        >
           <div className="p-1 md:p-10">
             <AnimatePresence mode="wait">
               {status === 'success' ? (
@@ -222,7 +227,7 @@ export default function JoinUs() {
               )}
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
