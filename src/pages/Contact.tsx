@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Contact() {
+  const { mouvementPhone, mouvementEmail, mouvementAddress } = useSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -69,7 +71,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase mb-1">Email</p>
-                  <p className="text-gray-900 font-semibold">contact@andunawle.sn</p>
+                  <p className="text-gray-900 font-semibold">{mouvementEmail}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -78,7 +80,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase mb-1">Téléphone</p>
-                  <p className="text-gray-900 font-semibold">+221 33 000 00 00</p>
+                  <p className="text-gray-900 font-semibold">{mouvementPhone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -87,7 +89,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase mb-1">Siége Social</p>
-                  <p className="text-gray-900 font-semibold">Dakar, Avenue Cheikh Anta Diop, Sénégal</p>
+                  <p className="text-gray-900 font-semibold">{mouvementAddress}</p>
                 </div>
               </div>
             </div>

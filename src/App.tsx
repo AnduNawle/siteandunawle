@@ -14,6 +14,7 @@ import Donate from './pages/Donate';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import { SettingsProvider } from './context/SettingsContext';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -44,32 +45,34 @@ function PageLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <HashRouter>
-      <ScrollToTop />
-      <PageLayout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/parti" element={<TheParty />} />
-          <Route path="/programme" element={<Program />} />
-          <Route path="/actualites" element={<News />} />
-          <Route path="/actualites/:slug" element={<NewsDetail />} />
-          <Route path="/evenements" element={<Events />} />
-          <Route path="/rejoindre" element={<JoinUs />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faire-un-don" element={<Donate />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </PageLayout>
-    </HashRouter>
+    <SettingsProvider>
+      <HashRouter>
+        <ScrollToTop />
+        <PageLayout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/parti" element={<TheParty />} />
+            <Route path="/programme" element={<Program />} />
+            <Route path="/actualites" element={<News />} />
+            <Route path="/actualites/:slug" element={<NewsDetail />} />
+            <Route path="/evenements" element={<Events />} />
+            <Route path="/rejoindre" element={<JoinUs />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faire-un-don" element={<Donate />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </PageLayout>
+      </HashRouter>
+    </SettingsProvider>
   );
 }

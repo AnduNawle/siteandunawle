@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, mapRow } from '../../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
+import { useSettings } from '../../context/SettingsContext';
 import { 
   Users, 
   MessageSquare, 
@@ -77,6 +78,7 @@ export default function Dashboard() {
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const navigate = useNavigate();
+  const { refreshSettings } = useSettings();
   const [adminEmail, setAdminEmail] = useState<string>('');
 
   // Rich Settings States with localStorage integration
@@ -230,6 +232,11 @@ export default function Dashboard() {
       } catch (siteErr) {
         console.error("Could not write parameters to database tables:", siteErr);
       }
+    }
+    try {
+      await refreshSettings();
+    } catch (err) {
+      console.warn("Could not refresh settings context:", err);
     }
   };
 

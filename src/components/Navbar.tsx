@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { Menu, X, Users, Heart, Calendar, MessageSquare, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { mouvementName, mouvementSlogan } = useSettings();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -43,11 +45,11 @@ export default function Navbar() {
         />
             </div>
             <div className="flex flex-col">
-              <span className={cn("font-bold text-lg leading-none", textDark ? "text-gray-900" : "text-white")}>
-                ANDU NAWLE
+              <span className={cn("font-bold text-lg leading-none uppercase", textDark ? "text-gray-900" : "text-white")}>
+                {mouvementName}
               </span>
-              <span className={cn("text-[10px] uppercase tracking-tighter font-medium", textDark ? "text-gray-500" : "text-blue-100")}>
-                La marche des territoires
+              <span className={cn("text-[10px] uppercase tracking-tighter font-medium max-w-[200px] truncate", textDark ? "text-gray-500" : "text-blue-100")}>
+                {mouvementSlogan}
               </span>
             </div>
           </Link>

@@ -1,7 +1,10 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Youtube, Phone, Mail, MapPin } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Footer() {
+  const { mouvementName, mouvementSlogan, mouvementPhone, mouvementEmail, mouvementAddress } = useSettings();
+
   return (
     <footer className="bg-[#002B6B] text-white">
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -9,13 +12,13 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#0047AB] font-bold">
-                AN
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                <img src="./images/logo.png" alt="Logo" className="w-9 h-9 object-contain" referrerPolicy="no-referrer" />
               </div>
-              <span className="font-bold text-xl tracking-tight">ANDU NAWLE</span>
+              <span className="font-bold text-xl tracking-tight uppercase">{mouvementName}</span>
             </div>
             <p className="text-blue-100 text-sm mb-6">
-              Ensemble, construisons l'avenir de nos territoires. Un développement inclusif, équitable et durable.
+              {mouvementSlogan}
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-blue-300 transition-colors"><Facebook size={20} /></a>
@@ -43,15 +46,15 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-blue-100">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="shrink-0" />
-                <span>Dakar, Avenue Cheikh Anta Diop, Sénégal</span>
+                <span>{mouvementAddress}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="shrink-0" />
-                <span>+221 33 000 00 00</span>
+                <span>{mouvementPhone}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="shrink-0" />
-                <span>contact@andunawle.sn</span>
+                <span>{mouvementEmail}</span>
               </li>
             </ul>
           </div>
@@ -76,7 +79,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-blue-800 mt-12 pt-8 text-center text-sm text-blue-300">
-          <p>© {new Date().getFullYear()} ANDU NAWLE. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} {mouvementName}. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
