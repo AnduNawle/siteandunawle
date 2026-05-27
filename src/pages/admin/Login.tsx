@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Lock, Mail, AlertCircle, Send, KeyRound, UserPlus } from 'lucide-react';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('youknowfeus@gmail.com');
-  const [password, setPassword] = useState('5569294');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -174,9 +174,6 @@ export default function AdminLogin() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Mot de passe</label>
-                {email === "youknowfeus@gmail.com" && (
-                  <span className="text-[10px] text-blue-500 font-bold italic">Utilisez : 5569294</span>
-                )}
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
