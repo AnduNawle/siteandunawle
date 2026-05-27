@@ -56,6 +56,7 @@ export default function Dashboard() {
     startTime: '',
     imageUrl: ''
   });
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const fetchStats = async () => {
@@ -63,8 +64,8 @@ export default function Dashboard() {
       const collectionsList = ['join_requests', 'contact_messages', 'articles', 'events'];
       const counts = await Promise.all(collectionsList.map(async (col) => {
         const coll = collection(db, col);
-        const snapshot = await getCountFromServer(coll);
-        return snapshot.data().count;
+        const snapshot = await getDocs(coll); // Fetch all to be absolutely sure of the count and for local calculation
+        return snapshot.size;
       }));
       
       setStats({
@@ -73,6 +74,45 @@ export default function Dashboard() {
         articles: counts[2],
         events: counts[3]
       });
+
+      // Fetch real recent activity across all collections
+      let activityData: any[] = [];
+      
+      const collectionsToPoll = [
+        { name: 'join_requests', type: 'inscription', icon: 'User' },
+        { name: 'contact_messages', type: 'message', icon: 'Mail' },
+        { name: 'articles', type: 'article', icon: 'Newspaper' },
+        { name: 'events', type: 'événement', icon: 'Calendar' }
+      ];
+
+      for (const col of collectionsToPoll) {
+        const q = query(collection(db, col.name), orderBy('createdAt', 'desc'), limit(5));
+        try {
+          const snap = await getDocs(q);
+          snap.docs.forEach(doc => activityData.push({ 
+            id: doc.id, 
+            type: col.type, 
+            label: col.icon,
+            ...doc.data() 
+          }));
+        } catch (e) {
+          // Fallback if index missing
+          const snap = await getDocs(collection(db, col.name));
+          snap.docs.slice(0, 5).forEach(doc => activityData.push({ 
+            id: doc.id, 
+            type: col.type, 
+            label: col.icon,
+            ...doc.data() 
+          }));
+        }
+      }
+
+      setRecentActivity(activityData.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || a.createdAt?._seconds || 0;
+        const dateB = b.createdAt?.seconds || b.createdAt?._seconds || 0;
+        return dateB - dateA;
+      }).slice(0, 10));
+
     } catch (err) {
       console.error("Error fetching stats:", err);
     }
@@ -88,9 +128,25 @@ export default function Dashboard() {
       if (view === 'events') colName = 'events';
 
       if (colName) {
-        const q = query(collection(db, colName), orderBy(view === 'events' ? 'eventDate' : 'createdAt', view === 'events' ? 'asc' : 'desc'));
-        const snap = await getDocs(q);
-        setData(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        // Fetch everything without query filtering/ordering to ensure no "missing" docs
+        const snap = await getDocs(collection(db, colName));
+        const allData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        console.log(`Fetched ${allData.length} items for ${view}`);
+        
+        // Sort in memory safely to handle documents missing sort fields
+        allData.sort((a: any, b: any) => {
+          const dateA = a.eventDate || a.createdAt?.toDate?.() || a.createdAt?.seconds || a.publishedAt?.toDate?.() || a.publishedAt?.seconds || 0;
+          const dateB = b.eventDate || b.createdAt?.toDate?.() || b.createdAt?.seconds || b.publishedAt?.toDate?.() || b.publishedAt?.seconds || 0;
+          
+          if (view === 'events') {
+            return dateA > dateB ? 1 : -1;
+          } else {
+            return dateB > dateA ? 1 : -1;
+          }
+        });
+        
+        setData(allData);
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -110,13 +166,24 @@ export default function Dashboard() {
   }, [currentView]);
 
   const handleDelete = async (id: string, col: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet élément ?")) {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet élément définitivement ?")) {
       try {
         await deleteDoc(doc(db, col, id));
-        fetchData(currentView);
+        
+        // Optimistic UI update for the current list
+        setData(prev => prev.filter(item => item.id !== id));
+        
+        // Refresh stats and potentially the list
         fetchStats();
+        if (currentView !== 'overview') {
+          // Don't call fetchData immediately to avoid double loading screen if optimistic update is enough
+          // but we do it to be sure
+          fetchData(currentView);
+        }
+        
       } catch (err) {
-        alert("Erreur lors de la suppression");
+        console.error("Delete error:", err);
+        alert("Erreur lors de la suppression. Vérifiez vos permissions.");
       }
     }
   };
@@ -266,7 +333,7 @@ export default function Dashboard() {
                 { label: 'Inscriptions', value: stats.members, icon: <Users />, color: 'bg-blue-500', view: 'inscriptions' as View },
                 { label: 'Messages', value: stats.messages, icon: <MessageSquare />, color: 'bg-indigo-500', view: 'messages' as View },
                 { label: 'Articles', value: stats.articles, icon: <Newspaper />, color: 'bg-teal-500', view: 'articles' as View },
-                { label: 'Événements', value: stats.events, icon: <Calendar />, color: 'bg-amber-500', view: 'overview' as View },
+                { label: 'Événements', value: stats.events, icon: <Calendar />, color: 'bg-amber-500', view: 'events' as View },
               ].map((card, i) => (
                 <button 
                   key={i} 
@@ -295,38 +362,49 @@ export default function Dashboard() {
                 </div>
                 
                 <div className="space-y-6">
-                  {stats.members > 0 || stats.messages > 0 || stats.articles > 0 ? (
-                    <>
-                      {stats.members > 0 && (
-                        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setCurrentView('inscriptions')}>
-                          <div className="w-2 h-2 bg-blue-400 rounded-full group-hover:scale-150 transition-transform"></div>
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-700">Vous avez <span className="font-bold">{stats.members}</span> inscriptions en attente.</p>
-                          </div>
-                          <ChevronRight size={14} className="text-gray-300" />
+                  {recentActivity.length > 0 ? (
+                    recentActivity.map((activity) => (
+                      <div 
+                        key={activity.id} 
+                        className="flex items-center gap-4 group cursor-pointer" 
+                        onClick={() => {
+                          if (activity.type === 'inscription') setCurrentView('inscriptions');
+                          else if (activity.type === 'message') setCurrentView('messages');
+                          else if (activity.type === 'article') setCurrentView('articles');
+                          else if (activity.type === 'événement') setCurrentView('events');
+                        }}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                          activity.type === 'inscription' ? 'bg-blue-50 text-blue-500' : 
+                          activity.type === 'message' ? 'bg-indigo-50 text-indigo-500' :
+                          activity.type === 'article' ? 'bg-teal-50 text-teal-500' : 'bg-amber-50 text-amber-500'
+                        }`}>
+                          {activity.type === 'inscription' ? <User size={18} /> : 
+                           activity.type === 'message' ? <Mail size={18} /> :
+                           activity.type === 'article' ? <Newspaper size={18} /> : <Calendar size={18} />}
                         </div>
-                      )}
-                      {stats.messages > 0 && (
-                        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setCurrentView('messages')}>
-                          <div className="w-2 h-2 bg-indigo-400 rounded-full group-hover:scale-150 transition-transform"></div>
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-700">Vous avez <span className="font-bold">{stats.messages}</span> nouveaux messages reçus.</p>
-                          </div>
-                          <ChevronRight size={14} className="text-gray-300" />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-700">
+                            {activity.type === 'inscription' ? (
+                              <>Nouvelle inscription : <span className="font-bold">{activity.firstname} {activity.lastname}</span></>
+                            ) : activity.type === 'message' ? (
+                              <>Nouveau message de <span className="font-bold">{activity.name}</span></>
+                            ) : activity.type === 'article' ? (
+                              <>Article publié : <span className="font-bold">{activity.title}</span></>
+                            ) : (
+                              <>Événement créé : <span className="font-bold">{activity.title}</span></>
+                            )}
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">
+                            {activity.createdAt?.seconds ? format(activity.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 
+                             activity.createdAt?._seconds ? format(new Date(activity.createdAt._seconds * 1000), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'Maintenant'}
+                          </p>
                         </div>
-                      )}
-                      {stats.articles > 0 && (
-                        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setCurrentView('articles')}>
-                          <div className="w-2 h-2 bg-teal-400 rounded-full group-hover:scale-150 transition-transform"></div>
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-700">Total de <span className="font-bold">{stats.articles}</span> articles publiés sur le site.</p>
-                          </div>
-                          <ChevronRight size={14} className="text-gray-300" />
-                        </div>
-                      )}
-                    </>
+                        <ChevronRight size={14} className="text-gray-300" />
+                      </div>
+                    ))
                   ) : (
-                    <p className="text-gray-400 text-sm italic">Aucune activité récente.</p>
+                    <p className="text-gray-400 text-sm italic py-8 text-center">Aucune activité récente.</p>
                   )}
                 </div>
               </div>
@@ -491,9 +569,10 @@ export default function Dashboard() {
                         <div className="flex gap-2">
                           <button 
                             onClick={() => handleDelete(art.id, 'articles')}
-                            className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
+                            title="Supprimer l'article"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </div>
@@ -539,12 +618,15 @@ export default function Dashboard() {
                       </div>
                       <p className="text-xs text-gray-500 line-clamp-2">{event.description}</p>
                     </div>
-                    <button 
-                      onClick={() => handleDelete(event.id, 'events')}
-                      className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleDelete(event.id, 'events')}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100 self-start"
+                        title="Supprimer l'événement"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

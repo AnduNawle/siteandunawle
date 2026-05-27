@@ -18,13 +18,17 @@ export default function News() {
       try {
         const q = query(
           collection(db, 'articles'),
-          orderBy('publishedAt', 'desc'),
-          limit(50)
+          limit(100)
         );
         const snapshot = await getDocs(q);
         const data = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Article))
-          .filter(art => art.status === ArticleStatus.PUBLISHED);
+          .filter(art => art.status === ArticleStatus.PUBLISHED)
+          .sort((a, b) => {
+            const dateA = a.publishedAt?.toDate?.() || a.publishedAt?.seconds || 0;
+            const dateB = b.publishedAt?.toDate?.() || b.publishedAt?.seconds || 0;
+            return dateB > dateA ? 1 : -1;
+          });
         setArticles(data);
       } catch (error) {
         console.error("Error fetching articles:", error);

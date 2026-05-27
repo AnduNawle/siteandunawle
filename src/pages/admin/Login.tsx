@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Lock, Mail, AlertCircle, Send, KeyRound, UserPlus } from 'lucide-react';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('youknowfeus@gmail.com');
+  const [password, setPassword] = useState('5569294');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -70,12 +70,20 @@ export default function AdminLogin() {
 
       navigate('/admin/dashboard');
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') {
-        setError("Compte inexistant. S'agirait-il d'une nouvelle installation ? Cliquez sur 'Créer un compte' si c'est vous.");
+      console.error("Login error code:", err.code);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        if (email === "youknowfeus@gmail.com") {
+          setError("Ce compte n'est pas encore initialisé sur ce nouvel environnement. Cliquez sur 'Initialiser le compte' pour le créer.");
+        } else {
+          setError("Identifiants incorrects ou compte inexistant.");
+        }
       } else if (err.code === 'auth/email-already-in-use') {
-        setError("Cet email est déjà utilisé. Essayez de vous connecter.");
+        setError("Ce compte existe déjà. Veuillez vous connecter. Si vous avez oublié votre mot de passe, utilisez le lien ci-dessous.");
+        setIsRegistering(false);
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError("Mot de passe incorrect pour cet email.");
       } else {
-        setError("Identifiants incorrects ou accès refusé.");
+        setError(`Erreur (${err.code}). Veuillez vérifier vos identifiants.`);
       }
       setLoading(false);
     }
@@ -137,13 +145,18 @@ export default function AdminLogin() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#0047AB] outline-none transition-all"
-                  placeholder="admin@andunawle.sn"
+                  placeholder="votre-email@gmail.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Mot de passe</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Mot de passe</label>
+                {email === "youknowfeus@gmail.com" && (
+                  <span className="text-[10px] text-blue-500 font-bold italic">Utilisez : 5569294</span>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input 
@@ -157,11 +170,36 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {error && (
+                {error && (
               <div className={`p-4 rounded-xl text-sm flex flex-col gap-3 border italic ${needsVerification ? 'bg-amber-50 text-amber-700 border-amber-100' : resetSent ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
                 <div className="flex items-center gap-3">
                   <AlertCircle size={18} /> {error}
                 </div>
+                
+                {error.includes("incorrect") && email === "youknowfeus@gmail.com" && (
+                  <button 
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="mt-2 w-full py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <KeyRound size={14} /> RÉINITIALISER MON MOT DE PASSE
+                  </button>
+                )}
+
+                {email === "youknowfeus@gmail.com" && !isRegistering && !error.includes("existe déjà") && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-[11px] text-blue-600 font-bold">
+                      Note: S'il s'agit de votre première connexion, vous devez initialiser l'accès.
+                    </p>
+                    <button 
+                      type="button"
+                      onClick={() => setIsRegistering(true)}
+                      className="w-full py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <UserPlus size={14} /> INITIALISER LE COMPTE MAINTENANT
+                    </button>
+                  </div>
+                )}
                 {needsVerification && !verificationSent && (
                   <button 
                     type="button"

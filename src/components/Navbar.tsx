@@ -37,7 +37,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold">
                <img 
-          src="src/components/images/logo.png" 
+          src="/images/logo.png" 
           alt="logo" 
           className="rounded-[10px]"
         />
@@ -53,13 +53,13 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-3 lg:space-x-6">
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) => cn(
-                  "text-sm font-semibold tracking-wide transition-colors",
+                  "text-xs lg:text-sm font-semibold tracking-wide transition-colors",
                   isActive 
                     ? "text-[#0047AB] border-b-2 border-[#0047AB]" 
                     : textDark ? "text-gray-700 hover:text-[#0047AB]" : "text-white hover:text-blue-200"
@@ -70,7 +70,7 @@ export default function Navbar() {
             ))}
             <Link 
               to="/rejoindre" 
-              className="bg-[#0047AB] text-white px-5 py-2.5 rounded hover:bg-blue-800 transition-colors text-sm font-bold flex items-center gap-2"
+              className="bg-[#0047AB] text-white px-3 lg:px-5 py-2.5 rounded hover:bg-blue-800 transition-colors text-xs lg:text-sm font-bold flex items-center gap-2 whitespace-nowrap"
             >
               <Users size={16} />
               NOUS REJOINDRE

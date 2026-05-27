@@ -20,22 +20,36 @@ export default function Home() {
         // Fetch Articles
         const articlesQuery = query(
           collection(db, 'articles'),
-          where('status', '==', ArticleStatus.PUBLISHED),
-          orderBy('publishedAt', 'desc'),
-          limit(3)
+          limit(10)
         );
         const articlesSnap = await getDocs(articlesQuery);
-        setLatestArticles(articlesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Article)));
+        const fetchedArticles = articlesSnap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Article))
+          .filter(art => art.status === ArticleStatus.PUBLISHED)
+          .sort((a, b) => {
+            const dateA = a.publishedAt?.toDate?.() || a.publishedAt?.seconds || 0;
+            const dateB = b.publishedAt?.toDate?.() || b.publishedAt?.seconds || 0;
+            return dateB > dateA ? 1 : -1;
+          })
+          .slice(0, 3);
+        setLatestArticles(fetchedArticles);
 
         // Fetch Events
         const eventsQuery = query(
           collection(db, 'events'),
-          where('status', '==', 'upcoming'),
-          orderBy('eventDate', 'asc'),
-          limit(2)
+          limit(10)
         );
         const eventsSnap = await getDocs(eventsQuery);
-        setUpcomingEvents(eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const fetchedEvents = eventsSnap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as any))
+          .filter(ev => ev.status === 'upcoming' || !ev.status)
+          .sort((a, b) => {
+            const dateA = a.eventDate || 0;
+            const dateB = b.eventDate || 0;
+            return dateA > dateB ? 1 : -1;
+          })
+          .slice(0, 2);
+        setUpcomingEvents(fetchedEvents);
       } catch (error) {
         console.error("Error fetching homepage data:", error);
       } finally {
@@ -183,8 +197,8 @@ export default function Home() {
                   className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 flex gap-6 hover:bg-white/10 transition-all group"
                 >
                   <div className="w-20 h-20 bg-blue-600 text-white rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
-                    <span className="text-2xl font-black">{format(new Date(event.eventDate), 'dd')}</span>
-                    <span className="text-[10px] font-bold uppercase">{format(new Date(event.eventDate), 'BBB', { locale: fr })}</span>
+                    <span className="text-2xl font-black">{event.eventDate ? format(new Date(event.eventDate), 'dd') : '--'}</span>
+                    <span className="text-[10px] font-bold uppercase">{event.eventDate ? format(new Date(event.eventDate), 'BBB', { locale: fr }) : 'DATE'}</span>
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold mb-3 group-hover:text-blue-400 transition-colors">{event.title}</h3>
@@ -228,7 +242,7 @@ export default function Home() {
             <div className="flex-1 relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl relative z-10">
                 <img 
-                  src="src/components/images/partileadership.png" 
+                  src="/images/partileadership.png" 
                   alt="Parti leadership" 
                   className="w-full h-full object-cover"
                 />

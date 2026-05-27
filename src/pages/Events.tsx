@@ -14,9 +14,15 @@ export default function Events() {
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const q = query(collection(db, 'events'), orderBy('eventDate', 'asc'), limit(6));
+        const q = query(collection(db, 'events'), limit(50));
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+        const data = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Event))
+          .sort((a, b) => {
+            const dateA = a.eventDate || '';
+            const dateB = b.eventDate || '';
+            return dateA > dateB ? 1 : -1;
+          });
         setEvents(data);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -90,8 +96,8 @@ export default function Events() {
                 <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#0047AB] group-hover:w-4 transition-all duration-300" />
                 
                 <div className="flex flex-col items-center justify-center p-6 bg-blue-50/50 rounded-3xl min-w-[140px] border border-blue-100/50 group-hover:bg-[#0047AB] transition-colors duration-300">
-                  <span className="text-5xl font-black text-[#0047AB] group-hover:text-white transition-colors">{format(new Date(event.eventDate), 'dd')}</span>
-                  <span className="text-sm font-bold text-gray-500 uppercase tracking-widest group-hover:text-blue-100 transition-colors">{format(new Date(event.eventDate), 'MMM', { locale: fr })}</span>
+                  <span className="text-5xl font-black text-[#0047AB] group-hover:text-white transition-colors">{event.eventDate ? format(new Date(event.eventDate), 'dd') : '--'}</span>
+                  <span className="text-sm font-bold text-gray-500 uppercase tracking-widest group-hover:text-blue-100 transition-colors">{event.eventDate ? format(new Date(event.eventDate), 'MMM', { locale: fr }) : 'DATE'}</span>
                 </div>
                 
                 <div className="flex-1 text-center md:text-left">

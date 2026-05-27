@@ -9,7 +9,7 @@ export default function Hero() {
       {/* Background Overlay with Image placeholder style */}
       <div className="absolute inset-0 z-0 opacity-80">
         <img 
-          src="src/components/images/back-1.png" 
+          src="/images/back-1.png" 
           alt="Andu Nawle Rally" 
           className="w-full h-full object-cover"
         />
@@ -17,30 +17,31 @@ export default function Hero() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 w-full">
-        <div className="max-w-2xl md:ml-16 lg:ml-32">
+        <div className="max-w-2xl lg:ml-16 xl:ml-32 md:-translate-y-12 lg:translate-y-0">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6"
+            className="text-[26px] min-[380px]:text-3xl sm:text-4xl md:text-6xl font-extrabold text-white leading-[1.1] mb-6 tracking-tight"
           >
-            {"Ensemble, construisons".split("").map((char, index) => (
-              <motion.span
-                key={`line1-${index}`}
-                animate={{ y: [0, -6, 0] }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: index * 0.08,
-                }}
-                className="inline-block"
-              >
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
-            ))}
-            <br />
-            <span className="text-blue-500">
+            <span className="block whitespace-nowrap">
+              {"Ensemble, construisons".split("").map((char, index) => (
+                <motion.span
+                  key={`line1-${index}`}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: index * 0.08,
+                  }}
+                  className="inline-block"
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </span>
+            <span className="text-blue-500 block whitespace-nowrap">
               {"l'avenir de nos territoires".split("").map((char, index) => (
                 <motion.span
                   key={`line2-${index}`}
