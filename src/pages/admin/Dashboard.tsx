@@ -39,7 +39,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 
-type View = 'overview' | 'inscriptions' | 'messages' | 'articles' | 'events' | 'settings';
+type View = 'overview' | 'inscriptions' | 'messages' | 'newsletter' | 'articles' | 'events' | 'settings';
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<View>('overview');
@@ -337,8 +337,8 @@ export default function Dashboard() {
     loadRemoteSettings();
   }, []);
 
-  const handleDownloadTable = async (table: 'join_requests' | 'contact_messages') => {
-    const label = table === 'join_requests' ? 'militants' : 'messages';
+  const handleDownloadTable = async (table: 'join_requests' | 'contact_messages' | 'newsletter_subscriptions') => {
+    const label = table === 'join_requests' ? 'militants' : table === 'contact_messages' ? 'messages' : 'newsletter_inscrits';
     setExportLoading(table);
     try {
       const { data: records, error } = await supabase.from(table).select('*');
@@ -451,6 +451,7 @@ export default function Dashboard() {
       let colName = '';
       if (view === 'inscriptions') colName = 'join_requests';
       if (view === 'messages') colName = 'contact_messages';
+      if (view === 'newsletter') colName = 'newsletter_subscriptions';
       if (view === 'articles') colName = 'articles';
       if (view === 'events') colName = 'events';
 
@@ -636,7 +637,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] md:text-xs bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-            {currentView === 'overview' ? 'DASHBOARD' : currentView === 'inscriptions' ? 'Membres' : currentView === 'messages' ? 'Messages' : currentView === 'articles' ? 'Actualités' : currentView === 'events' ? 'Événements' : 'Paramètres'}
+            {currentView === 'overview' ? 'DASHBOARD' : currentView === 'inscriptions' ? 'Membres' : currentView === 'messages' ? 'Messages' : currentView === 'newsletter' ? 'Newsletter' : currentView === 'articles' ? 'Actualités' : currentView === 'events' ? 'Événements' : 'Paramètres'}
           </span>
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -673,6 +674,7 @@ export default function Dashboard() {
           <SidebarButton view="overview" label="Dashboard" icon={LayoutDashboard} />
           <SidebarButton view="inscriptions" label="Inscriptions" icon={Users} />
           <SidebarButton view="messages" label="Messages" icon={MessageSquare} />
+          <SidebarButton view="newsletter" label="Newsletter" icon={Mail} />
           <SidebarButton view="articles" label="Actualités" icon={Newspaper} />
           <SidebarButton view="events" label="Événements" icon={Calendar} />
           <SidebarButton view="settings" label="Paramètres" icon={Settings} />
@@ -702,11 +704,11 @@ export default function Dashboard() {
       <main className="flex-1 p-4 md:p-6 lg:p-10">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 capitalize">
-              {currentView === 'overview' ? 'Tableau de bord' : currentView}
+            <h1 className="text-2xl font-bold text-gray-900">
+              {currentView === 'overview' ? 'Tableau de bord' : currentView === 'inscriptions' ? 'Militants et Inscrits' : currentView === 'messages' ? 'Messages citoyens' : currentView === 'newsletter' ? 'Inscrits Newsletter' : currentView === 'articles' ? 'Actualités et publications' : currentView === 'events' ? 'Événements' : 'Paramètres'}
             </h1>
-            <p className="text-gray-500">
-              {currentView === 'overview' ? 'Bienvenue dans votre espace de gestion.' : `Gestion des ${currentView}`}
+            <p className="text-gray-500 text-sm mt-1">
+              {currentView === 'overview' ? 'Bienvenue dans votre espace de gestion.' : currentView === 'inscriptions' ? 'Gestion des demandes d\'adhésion et des nouveaux militants.' : currentView === 'messages' ? 'Consulter et répondre aux messages reçus par courriel.' : currentView === 'newsletter' ? 'Consulter la liste de diffusion et gérer les adresses emails de la newsletter.' : currentView === 'articles' ? 'Écrire, modifier et publier les actualités du mouvement.' : currentView === 'events' ? 'Planifier et éditer les événements territoriaux.' : 'Configurer l\'identité et les préférences de la plateforme.'}
             </p>
           </div>
           <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
@@ -1163,6 +1165,76 @@ export default function Dashboard() {
                   </p>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {currentView === 'newsletter' && (
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 font-sans">Abonnés à la Newsletter</h3>
+                <p className="text-xs text-gray-500 mt-1">Total : <span className="font-semibold text-blue-600">{data.length} adresses inscrites</span></p>
+              </div>
+              <button
+                type="button"
+                disabled={data.length === 0 || exportLoading !== null}
+                onClick={() => handleDownloadTable('newsletter_subscriptions')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#0047AB] hover:bg-[#0037a0] text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shadow-sm"
+              >
+                {exportLoading === 'newsletter_subscriptions' ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Exportation...
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} /> Exporter la liste (JSON)
+                  </>
+                )}
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="bg-white rounded-2xl p-20 text-center text-gray-400 border border-gray-100">
+                <Loader2 className="animate-spin mx-auto mb-4 text-[#0047AB]" /> Chargement...
+              </div>
+            ) : data.length === 0 ? (
+              <div className="bg-white rounded-2xl p-20 text-center text-gray-400 border border-gray-100">Aucun abonné enregistré pour le moment.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.map((sub) => (
+                  <div key={sub.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center group transition-all hover:border-blue-100 hover:shadow-md">
+                    <div className="space-y-1 overflow-hidden">
+                      <p className="font-semibold text-gray-900 select-all truncate text-sm" title={sub.email}>
+                        {sub.email}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                        Inscrit le : {sub.createdAt?.seconds ? format(sub.createdAt.toDate(), 'dd MMM yyyy HH:mm', { locale: fr }) : sub.createdAt ? format(new Date(sub.createdAt), 'dd MMM yyyy HH:mm', { locale: fr }) : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0 ml-3">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(sub.email);
+                          alert('Email copié avec succès !');
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Copier l'email"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(sub.id, 'newsletter_subscriptions')}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Désabonner"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

@@ -1,9 +1,45 @@
-import React from 'react';
-import { Facebook, Twitter, Instagram, Youtube, Phone, Mail, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { Facebook, Twitter, Instagram, Youtube, Phone, Mail, MapPin, Loader2, Check } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { supabase } from '../lib/supabase';
 
 export default function Footer() {
   const { mouvementName, mouvementSlogan, mouvementPhone, mouvementEmail, mouvementAddress } = useSettings();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const { error } = await supabase.from('newsletter_subscriptions').insert([
+        { email: email.trim().toLowerCase() }
+      ]);
+
+      if (error) {
+        // Handle unique constraint or general error
+        if (error.code === '23505') {
+          setErrorMessage('Cette adresse email est déjà inscrite à notre newsletter !');
+        } else {
+          setErrorMessage(error.message || 'Une erreur est survenue lors de l\'inscription.');
+        }
+        setStatus('error');
+      } else {
+        setStatus('success');
+        setEmail('');
+        setTimeout(() => setStatus('idle'), 5000);
+      }
+    } catch (err: any) {
+      console.error('Subscription error:', err);
+      setErrorMessage('Une erreur de réseau s\'est produite.');
+      setStatus('error');
+    }
+  };
 
   return (
     <footer className="bg-[#002B6B] text-white">
@@ -65,16 +101,34 @@ export default function Footer() {
             <p className="text-blue-100 text-sm mb-4">
               Inscrivez-vous pour recevoir nos dernières nouvelles et mises à jour.
             </p>
-            <form className="flex gap-2">
+            <form onSubmit={handleSubscribe} className="flex gap-2">
               <input 
                 type="email" 
+                required
+                disabled={status === 'loading'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Votre email" 
-                className="bg-blue-900 border-none rounded px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-400"
+                className="bg-blue-900 border-none rounded px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-400 placeholder-blue-300 disabled:opacity-50"
               />
-              <button className="bg-white text-[#0047AB] px-4 py-2 rounded text-sm font-bold hover:bg-blue-50 transition-colors">
-                OK
+              <button 
+                type="submit"
+                disabled={status === 'loading'}
+                className="bg-white text-[#0047AB] px-4 py-2 rounded text-sm font-bold hover:bg-blue-50 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[50px]"
+              >
+                {status === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'OK'}
               </button>
             </form>
+            {status === 'success' && (
+              <p className="text-[#4ade80] text-xs font-semibold mt-2 flex items-center gap-1">
+                <Check size={14} /> Inscription réussie ! Merci.
+              </p>
+            )}
+            {status === 'error' && (
+              <p className="text-[#f87171] text-xs font-semibold mt-2 leading-tight">
+                {errorMessage}
+              </p>
+            )}
           </div>
         </div>
 
