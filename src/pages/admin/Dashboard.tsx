@@ -415,7 +415,7 @@ export default function Dashboard() {
       <div className="lg:hidden bg-[#002B6B] text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-            <img src="/images/logo.png" alt="Andu Nawle Logo" className="w-7 h-7 object-contain" referrerPolicy="no-referrer" />
+            <img src="./images/logo.png" alt="Andu Nawle Logo" className="w-7 h-7 object-contain" referrerPolicy="no-referrer" />
           </div>
           <h2 className="font-bold tracking-tight text-sm">ADMIN PANEL</h2>
         </div>
@@ -449,7 +449,7 @@ export default function Dashboard() {
       `}>
         <div className="flex items-center gap-3 mb-10">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-            <img src="/images/logo.png" alt="Andu Nawle Logo" className="w-7 h-7 object-contain" referrerPolicy="no-referrer" />
+            <img src="./images/logo.png" alt="Andu Nawle Logo" className="w-7 h-7 object-contain" referrerPolicy="no-referrer" />
           </div>
           <h2 className="font-bold tracking-tight">ADMIN PANEL</h2>
         </div>
