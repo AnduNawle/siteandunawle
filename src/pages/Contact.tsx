@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function Contact() {
@@ -13,10 +13,12 @@ export default function Contact() {
   });
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
+    setErrorMessage('');
 
     try {
       const { error } = await supabase.from('contact_messages').insert([
@@ -34,9 +36,10 @@ export default function Contact() {
       if (error) throw error;
       setStatus('success');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    } catch (error) {
-      console.error("Error sending message:", error);
+    } catch (err: any) {
+      console.error("Error sending message:", err);
       setStatus('error');
+      setErrorMessage(err?.message || String(err));
     }
   };
 
@@ -194,6 +197,22 @@ export default function Contact() {
                     placeholder="Comment pouvons-nous vous aider ?"
                   ></textarea>
                 </div>
+
+                {status === 'error' && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-4 rounded-xl shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle size={20} className="shrink-0 mt-0.5 text-red-500" />
+                      <div>
+                        <p className="font-bold text-sm">Une erreur est survenue lors de l'envoi.</p>
+                        {errorMessage && (
+                          <p className="font-mono text-xs mt-2 bg-white/70 p-2.5 rounded border border-red-100 select-all overflow-x-auto max-w-full">
+                            {errorMessage}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button 
                   disabled={status === 'loading'}

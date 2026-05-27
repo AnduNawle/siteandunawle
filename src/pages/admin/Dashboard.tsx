@@ -10,6 +10,9 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Briefcase,
   TrendingUp,
   Clock,
   ExternalLink,
@@ -30,6 +33,12 @@ type View = 'overview' | 'inscriptions' | 'messages' | 'articles' | 'events' | '
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<View>('overview');
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const [stats, setStats] = useState({
     members: 0,
     messages: 0,
@@ -38,6 +47,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -137,6 +147,7 @@ export default function Dashboard() {
 
   const fetchData = async (view: View) => {
     setLoading(true);
+    setError(null);
     try {
       let colName = '';
       if (view === 'inscriptions') colName = 'join_requests';
@@ -145,8 +156,8 @@ export default function Dashboard() {
       if (view === 'events') colName = 'events';
 
       if (colName) {
-        const { data: dbData, error } = await supabase.from(colName).select('*');
-        if (error) throw error;
+        const { data: dbData, error: fetchErr } = await supabase.from(colName).select('*');
+        if (fetchErr) throw fetchErr;
 
         const allData = (dbData || []).map(row => mapRow(row));
         
@@ -166,8 +177,9 @@ export default function Dashboard() {
         
         setData(allData);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching data:", err);
+      setError(err?.message || String(err));
     } finally {
       setLoading(false);
     }
@@ -177,6 +189,8 @@ export default function Dashboard() {
     // Reset loading and clear previous view data immediately on tab/view switch
     setLoading(true);
     setData([]);
+    setError(null);
+    setExpandedIds({});
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAdminEmail(session?.user?.email || '');
@@ -364,6 +378,29 @@ export default function Dashboard() {
           </div>
         </header>
 
+        {error && (
+          <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-800 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                <X size={20} className="text-red-600" />
+              </div>
+              <div className="flex-grow">
+                <h4 className="font-bold mb-1 text-red-900">Erreur de Base de Données / Supabase</h4>
+                <p className="font-mono text-xs mb-3 bg-red-100/30 p-2.5 rounded border border-red-200 overflow-x-auto select-all">{error}</p>
+                <div className="bg-white/80 p-4 rounded-xl border border-red-100 text-xs text-gray-600 leading-relaxed">
+                  <p className="font-bold mb-2 text-gray-800">Comment résoudre ce problème :</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Allez sur votre tableau de bord <span className="font-semibold">Supabase</span>.</li>
+                    <li>Ouvrez l'éditeur SQL (<span className="font-semibold">SQL Editor</span>).</li>
+                    <li>Copiez-collez et exécutez le script SQL fourni ci-dessous pour créer ou mettre à jour la table de cette vue.</li>
+                    <li>Assurez-vous que l'accès ou l'insertion public est autorisé par des politiques de sécurité (RLS) dans Supabase.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {currentView === 'overview' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -471,46 +508,127 @@ export default function Dashboard() {
                 <table className="w-full text-left">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
+                      <th className="p-4 text-xs font-bold text-gray-400 uppercase w-10"></th>
                       <th className="p-4 text-xs font-bold text-gray-400 uppercase">Militant</th>
                       <th className="p-4 text-xs font-bold text-gray-400 uppercase">Localité</th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Contact</th>
+                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Contact / Engagement</th>
                       <th className="p-4 text-xs font-bold text-gray-400 uppercase">Date</th>
                       <th className="p-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {data.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50/50">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase">
-                              {item.firstname?.[0]}{item.lastname?.[0]}
-                            </div>
-                            <span className="font-bold text-gray-900">{item.firstname} {item.lastname}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <MapPin size={14} /> {item.locality || 'N/A'}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="text-sm font-medium">{item.email}</div>
-                          <div className="text-xs text-gray-400">{item.phone}</div>
-                        </td>
-                        <td className="p-4 text-xs text-gray-500 whitespace-nowrap">
-                          {item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
-                        </td>
-                        <td className="p-4 text-right">
-                          <button 
-                            onClick={() => handleDelete(item.id, 'join_requests')}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    {data.map((item) => {
+                      const isExpanded = !!expandedIds[item.id];
+                      return (
+                        <React.Fragment key={item.id}>
+                          <tr 
+                            className={`hover:bg-gray-50/60 cursor-pointer select-none transition-colors ${isExpanded ? 'bg-blue-50/10' : ''}`}
+                            onClick={() => toggleExpand(item.id)}
                           >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            <td className="p-4 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => toggleExpand(item.id)}
+                                className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
+                                title="Voir les détails"
+                              >
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                  {item.firstname?.[0]}{item.lastname?.[0]}
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-gray-900 block truncate">{item.firstname} {item.lastname}</span>
+                                  {item.profession && (
+                                    <span className="text-[11px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 mt-0.5">
+                                      <Briefcase size={11} className="shrink-0 text-blue-500" /> {item.profession}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <MapPin size={14} className="text-gray-400 shrink-0" /> {item.locality || 'N/A'}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm font-medium text-gray-800">{item.email}</div>
+                              <div className="text-xs text-gray-400">{item.phone}</div>
+                              {item.engagementType && (
+                                <div className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider inline-block mt-1">
+                                  {item.engagementType === 'adherent' ? 'Adhérent' : 
+                                   item.engagementType === 'sympathisant' ? 'Sympathisant' : 
+                                   item.engagementType === 'donateur' ? 'Donateur' : item.engagementType}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs text-gray-500 whitespace-nowrap">
+                              {item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
+                            </td>
+                            <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button 
+                                onClick={() => handleDelete(item.id, 'join_requests')}
+                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Supprimer l'inscription"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className="bg-gray-50/30">
+                              <td colSpan={6} className="p-6 border-b border-gray-100 bg-blue-50/5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-10">
+                                  <div>
+                                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Informations de Profil</h5>
+                                    <ul className="space-y-2.5 text-sm text-gray-700">
+                                      <li>
+                                        <span className="font-bold text-gray-500">Nom complet : </span>
+                                        <span className="text-gray-900 font-semibold">{item.firstname} {item.lastname}</span>
+                                      </li>
+                                      <li>
+                                        <span className="font-bold text-gray-400 block mb-0.5">Profession renseignée :</span>
+                                        <span className="text-gray-900 font-semibold inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-100 text-xs">
+                                          <Briefcase size={12} className="text-gray-400" /> {item.profession || 'Non renseignée'}
+                                        </span>
+                                      </li>
+                                      <li>
+                                        <span className="font-bold text-gray-500">Type d'engagement souhaité : </span>
+                                        <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2.5 py-1 rounded-full text-xs inline-block mt-1">
+                                          {item.engagementType === 'adherent' ? 'Adhérent actif' : 
+                                           item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
+                                           item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
+                                        </span>
+                                      </li>
+                                    </ul>
+                                  </div>
+                                  <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                      <MessageSquare size={12} className="text-blue-500" />
+                                      Message & motivations de l'adhérent :
+                                    </h5>
+                                    {item.message?.trim() ? (
+                                      <div className="bg-white p-4 rounded-xl border border-gray-100 relative max-w-lg shadow-inner">
+                                        <p className="text-sm text-gray-700 leading-relaxed italic whitespace-pre-wrap">
+                                          "{item.message}"
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200 inline-block">
+                                        Aucun message d'accompagnement n'a été rédigé.
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
