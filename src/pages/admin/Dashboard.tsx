@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../../lib/firebase';
-import { collection, query, getDocs, limit, orderBy, deleteDoc, doc, Timestamp, addDoc, serverTimestamp, getCountFromServer } from 'firebase/firestore';
+import { supabase, mapRow } from '../../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Users, 
@@ -58,14 +57,21 @@ export default function Dashboard() {
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const navigate = useNavigate();
+  const [adminEmail, setAdminEmail] = useState<string>('');
 
   const fetchStats = async () => {
     try {
       const collectionsList = ['join_requests', 'contact_messages', 'articles', 'events'];
-      const counts = await Promise.all(collectionsList.map(async (col) => {
-        const coll = collection(db, col);
-        const snapshot = await getDocs(coll); // Fetch all to be absolutely sure of the count and for local calculation
-        return snapshot.size;
+      const counts = await Promise.all(collectionsList.map(async (table) => {
+        const { count, error } = await supabase
+          .from(table)
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          const { data } = await supabase.from(table).select('id');
+          return data ? data.length : 0;
+        }
+        return count || 0;
       }));
       
       setStats({
@@ -86,24 +92,35 @@ export default function Dashboard() {
       ];
 
       for (const col of collectionsToPoll) {
-        const q = query(collection(db, col.name), orderBy('createdAt', 'desc'), limit(5));
         try {
-          const snap = await getDocs(q);
-          snap.docs.forEach(doc => activityData.push({ 
-            id: doc.id, 
-            type: col.type, 
-            label: col.icon,
-            ...doc.data() 
-          }));
+          const { data, error } = await supabase
+            .from(col.name)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          if (error) throw error;
+
+          (data || []).forEach(row => {
+            const mapped = mapRow(row);
+            activityData.push({ 
+              id: mapped.id, 
+              type: col.type, 
+              label: col.icon,
+              ...mapped 
+            });
+          });
         } catch (e) {
-          // Fallback if index missing
-          const snap = await getDocs(collection(db, col.name));
-          snap.docs.slice(0, 5).forEach(doc => activityData.push({ 
-            id: doc.id, 
-            type: col.type, 
-            label: col.icon,
-            ...doc.data() 
-          }));
+          const { data } = await supabase.from(col.name).select('*');
+          (data || []).slice(0, 5).forEach(row => {
+            const mapped = mapRow(row);
+            activityData.push({ 
+              id: mapped.id, 
+              type: col.type, 
+              label: col.icon,
+              ...mapped
+            });
+          });
         }
       }
 
@@ -128,9 +145,10 @@ export default function Dashboard() {
       if (view === 'events') colName = 'events';
 
       if (colName) {
-        // Fetch everything without query filtering/ordering to ensure no "missing" docs
-        const snap = await getDocs(collection(db, colName));
-        const allData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const { data: dbData, error } = await supabase.from(colName).select('*');
+        if (error) throw error;
+
+        const allData = (dbData || []).map(row => mapRow(row));
         
         console.log(`Fetched ${allData.length} items for ${view}`);
         
@@ -156,6 +174,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAdminEmail(session?.user?.email || '');
+    });
     fetchStats().then(() => {
       if (currentView === 'overview') {
         setLoading(false);
@@ -168,7 +189,8 @@ export default function Dashboard() {
   const handleDelete = async (id: string, col: string) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cet élément définitivement ?")) {
       try {
-        await deleteDoc(doc(db, col, id));
+        const { error } = await supabase.from(col).delete().eq('id', id);
+        if (error) throw error;
         
         // Optimistic UI update for the current list
         setData(prev => prev.filter(item => item.id !== id));
@@ -176,8 +198,6 @@ export default function Dashboard() {
         // Refresh stats and potentially the list
         fetchStats();
         if (currentView !== 'overview') {
-          // Don't call fetchData immediately to avoid double loading screen if optimistic update is enough
-          // but we do it to be sure
           fetchData(currentView);
         }
         
@@ -204,17 +224,22 @@ export default function Dashboard() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
 
-      await addDoc(collection(db, 'articles'), {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      const { error } = await supabase.from('articles').insert([{
         title: articleData.title,
         content: articleData.content,
         status: articleData.status,
         image: articleData.imageUrl,
         slug,
-        createdAt: serverTimestamp(),
-        publishedAt: articleData.status === 'published' ? serverTimestamp() : null,
-        authorId: auth.currentUser?.uid,
+        created_at: new Date().toISOString(),
+        published_at: articleData.status === 'published' ? new Date().toISOString() : null,
+        authorId: userId,
         summary: articleData.content.replace(/<[^>]*>/g, '').substring(0, 160)
-      });
+      }]);
+
+      if (error) throw error;
       
       // Refresh in background
       fetchData('articles');
@@ -240,13 +265,19 @@ export default function Dashboard() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
 
-      await addDoc(collection(db, 'events'), {
-        ...eventData,
+      const { error } = await supabase.from('events').insert([{
+        title: eventData.title,
+        description: eventData.description,
+        location: eventData.location,
+        eventDate: eventData.eventDate,
+        startTime: eventData.startTime,
         image: eventData.imageUrl,
         slug,
         status: 'upcoming',
-        createdAt: serverTimestamp()
-      });
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) throw error;
       
       fetchData('events');
       fetchStats();
@@ -256,8 +287,8 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
-    auth.signOut();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/admin/login');
   };
 
@@ -640,7 +671,7 @@ export default function Dashboard() {
             <div className="space-y-8 max-w-md">
               <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
                 <p className="text-xs text-amber-700 leading-relaxed">
-                  <span className="font-bold">Note :</span> Vos accès administratifs sont régis par l'email lié à votre compte Firebase.
+                  <span className="font-bold">Note :</span> Vos accès administratifs sont régis par l'email lié à votre compte Supabase.
                 </p>
               </div>
               
@@ -649,7 +680,7 @@ export default function Dashboard() {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Email Administrateur</label>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <User size={16} className="text-gray-400" />
-                    {auth.currentUser?.email}
+                    {adminEmail}
                   </div>
                 </div>
                 <div className="pt-4">

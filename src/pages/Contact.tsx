@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -20,11 +19,19 @@ export default function Contact() {
     setStatus('loading');
 
     try {
-      await addDoc(collection(db, 'contact_messages'), {
-        ...formData,
-        isRead: false,
-        createdAt: serverTimestamp(),
-      });
+      const { error } = await supabase.from('contact_messages').insert([
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          isRead: false,
+          created_at: new Date().toISOString(),
+        }
+      ]);
+      
+      if (error) throw error;
       setStatus('success');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (error) {

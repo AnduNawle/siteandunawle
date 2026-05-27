@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 import { EngagementType } from '../types';
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -42,11 +41,21 @@ export default function JoinUs() {
 
     const path = 'join_requests';
     try {
-      await addDoc(collection(db, path), {
-        ...formData,
-        createdAt: serverTimestamp(),
-        status: 'pending'
-      });
+      const { error } = await supabase.from(path).insert([
+        {
+          firstname: formData.firstname,
+          lastname: formData.lastname,
+          phone: formData.phone,
+          email: formData.email,
+          locality: formData.locality,
+          profession: formData.profession,
+          engagementType: formData.engagementType,
+          message: formData.message,
+          created_at: new Date().toISOString(),
+          status: 'pending'
+        }
+      ]);
+      if (error) throw error;
       setStatus('success');
       setFormData({
         firstname: '',

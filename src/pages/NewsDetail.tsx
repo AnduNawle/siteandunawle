@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { supabase, mapRow } from '../lib/supabase';
 import { Article } from '../types';
 import { Calendar, User, ArrowLeft, Share2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -16,17 +15,19 @@ export default function NewsDetail() {
   useEffect(() => {
     async function fetchArticle() {
       try {
-        const q = query(
-          collection(db, 'articles'),
-          where('slug', '==', slug),
-          limit(1)
-        );
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          const data = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Article;
+        const { data, error } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('slug', slug)
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const articleRow = mapRow(data[0]) as Article;
           // Only show published articles unless we add admin preview logic later
-          if (data.status === 'published' || data.status === undefined) {
-             setArticle(data);
+          if (articleRow.status === 'published' || articleRow.status === undefined) {
+             setArticle(articleRow);
           }
         }
       } catch (error) {

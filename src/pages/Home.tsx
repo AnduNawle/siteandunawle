@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Hero from '../components/Hero';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { supabase, mapRow } from '../lib/supabase';
 import { Article, ArticleStatus } from '../types';
 import { Shield, GraduationCap, HeartPulse, Lock, ArrowRight, Users, Megaphone, CalendarDays, Heart, Calendar, ArrowRightCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,13 +17,15 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch Articles
-        const articlesQuery = query(
-          collection(db, 'articles'),
-          limit(10)
-        );
-        const articlesSnap = await getDocs(articlesQuery);
-        const fetchedArticles = articlesSnap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Article))
+        const { data: articlesData, error: articlesErr } = await supabase
+          .from('articles')
+          .select('*')
+          .limit(10);
+
+        if (articlesErr) throw articlesErr;
+
+        const fetchedArticles = (articlesData || [])
+          .map(row => mapRow(row) as Article)
           .filter(art => art.status === ArticleStatus.PUBLISHED)
           .sort((a, b) => {
             const dateA = a.publishedAt?.toDate?.() || a.publishedAt?.seconds || 0;
@@ -35,13 +36,15 @@ export default function Home() {
         setLatestArticles(fetchedArticles);
 
         // Fetch Events
-        const eventsQuery = query(
-          collection(db, 'events'),
-          limit(10)
-        );
-        const eventsSnap = await getDocs(eventsQuery);
-        const fetchedEvents = eventsSnap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as any))
+        const { data: eventsData, error: eventsErr } = await supabase
+          .from('events')
+          .select('*')
+          .limit(10);
+
+        if (eventsErr) throw eventsErr;
+
+        const fetchedEvents = (eventsData || [])
+          .map(row => mapRow(row) as any)
           .filter(ev => ev.status === 'upcoming' || !ev.status)
           .sort((a, b) => {
             const dateA = a.eventDate || 0;

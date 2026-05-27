@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
+import { supabase, mapRow } from '../lib/supabase';
 import { Event, EventStatus } from '../types';
 import { Calendar, MapPin, Clock, ArrowRight, Video, Sparkles, Navigation } from 'lucide-react';
 import { format } from 'date-fns';
@@ -14,10 +13,15 @@ export default function Events() {
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const q = query(collection(db, 'events'), limit(50));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Event))
+        const { data: dbData, error } = await supabase
+          .from('events')
+          .select('*')
+          .limit(50);
+
+        if (error) throw error;
+
+        const data = (dbData || [])
+          .map(row => mapRow(row) as Event)
           .sort((a, b) => {
             const dateA = a.eventDate || '';
             const dateB = b.eventDate || '';

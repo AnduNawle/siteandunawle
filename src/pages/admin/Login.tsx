@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from '../../lib/firebase';
-import { signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Lock, Mail, AlertCircle, Send, KeyRound, UserPlus } from 'lucide-react';
 
@@ -17,13 +16,24 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.emailVerified) {
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
         navigate('/admin/dashboard');
       }
       setCheckingAuth(false);
     });
-    return () => unsubscribe();
+
+    // Listen to changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        navigate('/admin/dashboard');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (checkingAuth) {
@@ -50,40 +60,46 @@ export default function AdminLogin() {
           setLoading(false);
           return;
         }
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        user = userCredential.user;
-        await sendEmailVerification(user);
+
+        const { data, error: signUpErr } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (signUpErr) throw signUpErr;
+        user = data.user;
         setVerificationSent(true);
-        setError("Compte créé ! Un email de validation a été envoyé.");
+        setError("Compte créé ! Veuillez valider votre compte via l'email de confirmation envoyé.");
       } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        user = userCredential.user;
+        const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInErr) throw signInErr;
+        user = data.user;
       }
 
-      // Skip verification for the primary admin email to facilitate setup
-      if (!user.emailVerified && user.email !== "youknowfeus@gmail.com") {
-        setNeedsVerification(true);
-        setError("Votre email n'est pas encore vérifié. Veuillez valider votre compte via l'email envoyé par Firebase.");
-        setLoading(false);
-        return;
+      if (user) {
+        navigate('/admin/dashboard');
       }
-
-      navigate('/admin/dashboard');
     } catch (err: any) {
-      console.error("Login error code:", err.code);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      console.error("Login/Signup error:", err);
+      const errMsg = err.message || JSON.stringify(err);
+
+      if (errMsg.includes("invalid_credentials") || errMsg.includes("Invalid login credentials") || errMsg.includes("wrong-password")) {
         if (email === "youknowfeus@gmail.com") {
-          setError("Ce compte n'est pas encore initialisé sur ce nouvel environnement. Cliquez sur 'Initialiser le compte' pour le créer.");
+          setError("Ce compte n'est pas encore initialisé ou ce mot de passe est incorrect. Si vous n'avez pas encore de compte, cliquez sur 'Initialiser le compte' pour le créer.");
         } else {
           setError("Identifiants incorrects ou compte inexistant.");
         }
-      } else if (err.code === 'auth/email-already-in-use') {
+      } else if (errMsg.includes("already registered") || errMsg.includes("email_exists") || errMsg.includes("User already registered")) {
         setError("Ce compte existe déjà. Veuillez vous connecter. Si vous avez oublié votre mot de passe, utilisez le lien ci-dessous.");
         setIsRegistering(false);
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError("Mot de passe incorrect pour cet email.");
+      } else if (errMsg.includes("weak_password") || errMsg.includes("Password should be")) {
+        setError("Le mot de passe choisi est trop faible.");
       } else {
-        setError(`Erreur (${err.code}). Veuillez vérifier vos identifiants.`);
+        setError(`Erreur d'authentification : ${errMsg}`);
       }
       setLoading(false);
     }
@@ -97,28 +113,33 @@ export default function AdminLogin() {
 
     try {
       setLoading(true);
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/admin/login',
+      });
+      if (error) throw error;
       setResetSent(true);
       setError("Un lien de réinitialisation a été envoyé à " + email);
     } catch (err: any) {
-      setError("Erreur : Impossible d'envoyer l'email de réinitialisation.");
+      setError("Erreur : Impossible d'envoyer l'email de réinitialisation. " + (err.message || ''));
     } finally {
       setLoading(false);
     }
   };
 
   const resendVerification = async () => {
-    if (auth.currentUser) {
-      try {
-        setLoading(true);
-        await sendEmailVerification(auth.currentUser);
-        setVerificationSent(true);
-        setError("Email de validation renvoyé ! Vérifiez votre boîte de réception (et vos spams).");
-      } catch (err) {
-        setError("Erreur lors de l'envoi de l'email. Réessayez dans quelques minutes.");
-      } finally {
-        setLoading(false);
-      }
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      if (error) throw error;
+      setVerificationSent(true);
+      setError("Email de validation renvoyé ! Vérifiez votre boîte de réception.");
+    } catch (err: any) {
+      setError("Erreur de renvoi : " + (err.message || ''));
+    } finally {
+      setLoading(false);
     }
   };
 

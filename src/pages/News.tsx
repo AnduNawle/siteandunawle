@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { supabase, mapRow } from '../lib/supabase';
 import { Article, ArticleStatus } from '../types';
 import { Calendar, User, ArrowRight, Search, Newspaper, TrendingUp, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
@@ -16,13 +15,15 @@ export default function News() {
   useEffect(() => {
     async function fetchArticles() {
       try {
-        const q = query(
-          collection(db, 'articles'),
-          limit(100)
-        );
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Article))
+        const { data: dbData, error } = await supabase
+          .from('articles')
+          .select('*')
+          .limit(100);
+
+        if (error) throw error;
+
+        const data = (dbData || [])
+          .map(row => mapRow(row) as Article)
           .filter(art => art.status === ArticleStatus.PUBLISHED)
           .sort((a, b) => {
             const dateA = a.publishedAt?.toDate?.() || a.publishedAt?.seconds || 0;
