@@ -24,7 +24,8 @@ import {
   Loader2,
   Plus,
   X,
-  Save
+  Save,
+  Menu
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -35,6 +36,7 @@ type View = 'overview' | 'inscriptions' | 'messages' | 'articles' | 'events' | '
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<View>('overview');
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
@@ -316,7 +318,10 @@ export default function Dashboard() {
 
   const SidebarButton = ({ view, label, icon: Icon }: { view: View, label: string, icon: any }) => (
     <button 
-      onClick={() => setCurrentView(view)}
+      onClick={() => {
+        setCurrentView(view);
+        setIsMobileMenuOpen(false);
+      }}
       className={`flex items-center gap-3 w-full p-3 rounded-xl font-semibold transition-all ${currentView === view ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-white/5'}`}
     >
       <Icon size={20} /> {label}
@@ -325,9 +330,41 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
+      {/* Mobile Sticky Header */}
+      <div className="lg:hidden bg-[#002B6B] text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-[#002B6B] font-bold">AN</div>
+          <h2 className="font-bold tracking-tight text-sm">ADMIN PANEL</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] md:text-xs bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+            {currentView === 'overview' ? 'DASHBOARD' : currentView === 'inscriptions' ? 'Membres' : currentView === 'messages' ? 'Messages' : currentView === 'articles' ? 'Actualités' : currentView === 'events' ? 'Événements' : 'Paramètres'}
+          </span>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white"
+            title="Menu"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Backdrop Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-full lg:w-64 bg-[#002B6B] text-white p-6 flex flex-col">
-        <div className="flex items-center gap-3 mb-12">
+      <aside className={`
+        fixed inset-y-0 left-0 bg-[#002B6B] text-white p-6 flex flex-col z-40 w-64 transform transition-transform duration-300 ease-in-out shrink-0
+        lg:static lg:translate-x-0 lg:flex lg:h-screen lg:w-64
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="flex items-center gap-3 mb-10">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-[#002B6B] font-bold">AN</div>
           <h2 className="font-bold tracking-tight">ADMIN PANEL</h2>
         </div>
@@ -345,11 +382,15 @@ export default function Dashboard() {
           <Link 
             to="/" 
             className="flex items-center gap-3 w-full p-3 text-blue-200 hover:text-white border border-white/10 rounded-xl transition-all text-sm font-medium"
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <ExternalLink size={18} /> Voir le site public
           </Link>
           <button 
-            onClick={handleLogout}
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleLogout();
+            }}
             className="flex items-center gap-3 w-full p-3 text-red-300 hover:text-red-100 hover:bg-red-500/10 rounded-xl transition-all text-sm font-bold"
           >
             <LogOut size={18} /> Déconnexion
@@ -358,7 +399,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10">
+      <main className="flex-1 p-4 md:p-6 lg:p-10">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 capitalize">
@@ -505,134 +546,229 @@ export default function Dashboard() {
             ) : data.length === 0 ? (
               <div className="p-20 text-center text-gray-400">Aucune inscription pour le moment.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase w-10"></th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Militant</th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Localité</th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Contact / Engagement</th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase">Date</th>
-                      <th className="p-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {data.map((item) => {
-                      const isExpanded = !!expandedIds[item.id];
-                      return (
-                        <React.Fragment key={item.id}>
-                          <tr 
-                            className={`hover:bg-gray-50/60 cursor-pointer select-none transition-colors ${isExpanded ? 'bg-blue-50/10' : ''}`}
-                            onClick={() => toggleExpand(item.id)}
-                          >
-                            <td className="p-4 w-10 text-center" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => toggleExpand(item.id)}
-                                className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
-                                title="Voir les détails"
-                              >
-                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                              </button>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                  {item.firstname?.[0]}{item.lastname?.[0]}
-                                </div>
-                                <div className="min-w-0">
-                                  <span className="font-bold text-gray-900 block truncate">{item.firstname} {item.lastname}</span>
-                                  {item.profession && (
-                                    <span className="text-[11px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 mt-0.5">
-                                      <Briefcase size={11} className="shrink-0 text-blue-500" /> {item.profession}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <MapPin size={14} className="text-gray-400 shrink-0" /> {item.locality || 'N/A'}
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="text-sm font-medium text-gray-800">{item.email}</div>
-                              <div className="text-xs text-gray-400">{item.phone}</div>
-                              {item.engagementType && (
-                                <div className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider inline-block mt-1">
-                                  {item.engagementType === 'adherent' ? 'Adhérent' : 
-                                   item.engagementType === 'sympathisant' ? 'Sympathisant' : 
-                                   item.engagementType === 'donateur' ? 'Donateur' : item.engagementType}
-                                </div>
+              <>
+                {/* Mobile View: Cards List */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {data.map((item) => {
+                    const isExpanded = !!expandedIds[item.id];
+                    return (
+                      <div key={item.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                              {item.firstname?.[0]}{item.lastname?.[0]}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-bold text-gray-900 block truncate">{item.firstname} {item.lastname}</span>
+                              {item.profession && (
+                                <span className="text-[10px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 mt-0.5">
+                                  <Briefcase size={10} className="shrink-0 text-blue-500" /> {item.profession}
+                                </span>
                               )}
-                            </td>
-                            <td className="p-4 text-xs text-gray-500 whitespace-nowrap">
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => toggleExpand(item.id)}
+                              className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
+                              title="Voir les détails"
+                            >
+                              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(item.id, 'join_requests')}
+                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Supprimer l'inscription"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="text-xs space-y-2 text-gray-600">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={12} className="text-gray-400 shrink-0" />
+                            <span>{item.locality || 'N/A'}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="font-medium text-gray-800 select-all break-all">{item.email}</div>
+                            <div className="text-[11px] text-gray-500 font-semibold select-all">{item.phone}</div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            {item.engagementType && (
+                              <span className="text-[9px] text-emerald-800 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                {item.engagementType === 'adherent' ? 'Adhérent' : 
+                                 item.engagementType === 'sympathisant' ? 'Sympathisant' : 
+                                 item.engagementType === 'donateur' ? 'Donateur' : item.engagementType}
+                              </span>
+                            )}
+                            <span className="text-[9px] text-gray-400 font-bold uppercase">
                               {item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
-                            </td>
-                            <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                onClick={() => handleDelete(item.id, 'join_requests')}
-                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Supprimer l'inscription"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </td>
-                          </tr>
-                          {isExpanded && (
-                            <tr className="bg-gray-50/30">
-                              <td colSpan={6} className="p-6 border-b border-gray-100 bg-blue-50/5">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-10">
-                                  <div>
-                                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Informations de Profil</h5>
-                                    <ul className="space-y-2.5 text-sm text-gray-700">
-                                      <li>
-                                        <span className="font-bold text-gray-500">Nom complet : </span>
-                                        <span className="text-gray-900 font-semibold">{item.firstname} {item.lastname}</span>
-                                      </li>
-                                      <li>
-                                        <span className="font-bold text-gray-400 block mb-0.5">Profession renseignée :</span>
-                                        <span className="text-gray-900 font-semibold inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-100 text-xs">
-                                          <Briefcase size={12} className="text-gray-400" /> {item.profession || 'Non renseignée'}
-                                        </span>
-                                      </li>
-                                      <li>
-                                        <span className="font-bold text-gray-500">Type d'engagement souhaité : </span>
-                                        <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2.5 py-1 rounded-full text-xs inline-block mt-1">
-                                          {item.engagementType === 'adherent' ? 'Adhérent actif' : 
-                                           item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
-                                           item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
-                                        </span>
-                                      </li>
-                                    </ul>
+                            </span>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="pt-3 border-t border-gray-150 space-y-2.5">
+                            <div className="bg-blue-50/5 p-3 rounded-lg border border-gray-100">
+                              <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Type d'engagement souhaité</h5>
+                              <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2 py-0.5 rounded text-[11px] inline-block">
+                                {item.engagementType === 'adherent' ? 'Adhérent actif' : 
+                                 item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
+                                 item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
+                              </span>
+                            </div>
+                            <div>
+                              <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <MessageSquare size={10} className="text-blue-500" /> Message & motivations
+                              </h5>
+                              {item.message?.trim() ? (
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 italic text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                  "{item.message}"
+                                </div>
+                              ) : (
+                                <p className="text-[10px] text-gray-400 italic bg-gray-50 p-2 rounded-lg border border-dashed border-gray-200">
+                                  Aucun message d'accompagnement rédigé.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop View: Table Layout */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase w-10"></th>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase">Militant</th>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase">Localité</th>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase">Contact / Engagement</th>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase">Date</th>
+                        <th className="p-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {data.map((item) => {
+                        const isExpanded = !!expandedIds[item.id];
+                        return (
+                          <React.Fragment key={item.id}>
+                            <tr 
+                              className={`hover:bg-gray-50/60 cursor-pointer select-none transition-colors ${isExpanded ? 'bg-blue-50/10' : ''}`}
+                              onClick={() => toggleExpand(item.id)}
+                            >
+                              <td className="p-4 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => toggleExpand(item.id)}
+                                  className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
+                                  title="Voir les détails"
+                                >
+                                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                    {item.firstname?.[0]}{item.lastname?.[0]}
                                   </div>
-                                  <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                      <MessageSquare size={12} className="text-blue-500" />
-                                      Message & motivations de l'adhérent :
-                                    </h5>
-                                    {item.message?.trim() ? (
-                                      <div className="bg-white p-4 rounded-xl border border-gray-100 relative max-w-lg shadow-inner">
-                                        <p className="text-sm text-gray-700 leading-relaxed italic whitespace-pre-wrap">
-                                          "{item.message}"
-                                        </p>
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200 inline-block">
-                                        Aucun message d'accompagnement n'a été rédigé.
-                                      </p>
+                                  <div className="min-w-0">
+                                    <span className="font-bold text-gray-900 block truncate">{item.firstname} {item.lastname}</span>
+                                    {item.profession && (
+                                      <span className="text-[11px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 mt-0.5">
+                                        <Briefcase size={11} className="shrink-0 text-blue-500" /> {item.profession}
+                                      </span>
                                     )}
                                   </div>
                                 </div>
                               </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <MapPin size={14} className="text-gray-400 shrink-0" /> {item.locality || 'N/A'}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="text-sm font-medium text-gray-800">{item.email}</div>
+                                <div className="text-xs text-gray-400">{item.phone}</div>
+                                {item.engagementType && (
+                                  <div className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider inline-block mt-1">
+                                    {item.engagementType === 'adherent' ? 'Adhérent' : 
+                                     item.engagementType === 'sympathisant' ? 'Sympathisant' : 
+                                     item.engagementType === 'donateur' ? 'Donateur' : item.engagementType}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="p-4 text-xs text-gray-500 whitespace-nowrap">
+                                {item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
+                              </td>
+                              <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                <button 
+                                  onClick={() => handleDelete(item.id, 'join_requests')}
+                                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="Supprimer l'inscription"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </td>
                             </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {isExpanded && (
+                              <tr className="bg-gray-50/30">
+                                <td colSpan={6} className="p-6 border-b border-gray-100 bg-blue-50/5">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-10">
+                                    <div>
+                                      <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Informations de Profil</h5>
+                                      <ul className="space-y-2.5 text-sm text-gray-700">
+                                        <li>
+                                          <span className="font-bold text-gray-500">Nom complet : </span>
+                                          <span className="text-gray-900 font-semibold">{item.firstname} {item.lastname}</span>
+                                        </li>
+                                        <li>
+                                          <span className="font-bold text-gray-400 block mb-0.5">Profession renseignée :</span>
+                                          <span className="text-gray-900 font-semibold inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-100 text-xs">
+                                            <Briefcase size={12} className="text-gray-400" /> {item.profession || 'Non renseignée'}
+                                          </span>
+                                        </li>
+                                        <li>
+                                          <span className="font-bold text-gray-500">Type d'engagement souhaité : </span>
+                                          <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2.5 py-1 rounded-full text-xs inline-block mt-1">
+                                            {item.engagementType === 'adherent' ? 'Adhérent actif' : 
+                                             item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
+                                             item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
+                                          </span>
+                                        </li>
+                                      </ul>
+                                    </div>
+                                    <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                                      <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <MessageSquare size={12} className="text-blue-500" />
+                                        Message & motivations de l'adhérent :
+                                      </h5>
+                                      {item.message?.trim() ? (
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 relative max-w-lg shadow-inner">
+                                          <p className="text-sm text-gray-700 leading-relaxed italic whitespace-pre-wrap">
+                                            "{item.message}"
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200 inline-block">
+                                          Aucun message d'accompagnement n'a été rédigé.
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
