@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -44,7 +44,7 @@ function PageLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ScrollToTop />
       <PageLayout>
         <Routes>
@@ -70,6 +70,6 @@ export default function App() {
           />
         </Routes>
       </PageLayout>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
