@@ -25,7 +25,14 @@ import {
   Plus,
   X,
   Save,
-  Menu
+  Menu,
+  Download,
+  Shield,
+  Bell,
+  Database,
+  Check,
+  Globe,
+  Building
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -71,6 +78,80 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const navigate = useNavigate();
   const [adminEmail, setAdminEmail] = useState<string>('');
+
+  // Rich Settings States with localStorage integration
+  const [settingsActiveSubTab, setSettingsActiveSubTab] = useState<'general' | 'security' | 'data_export' | 'prefs'>('general');
+  const [settingsSaveFeedback, setSettingsSaveFeedback] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState<string | null>(null);
+
+  const [mouvementName, setMouvementName] = useState(() => localStorage.getItem('andu_mouvement_name') || 'Andu Nawle');
+  const [mouvementSlogan, setMouvementSlogan] = useState(() => localStorage.getItem('andu_mouvement_slogan') || 'Savoir, Volonté, Action — Unir les forces pour le progrès national');
+  const [mouvementPhone, setMouvementPhone] = useState(() => localStorage.getItem('andu_mouvement_phone') || '+221 77 123 45 67');
+  const [mouvementEmail, setMouvementEmail] = useState(() => localStorage.getItem('andu_mouvement_email') || 'contact@andunawle.sn');
+  const [mouvementAddress, setMouvementAddress] = useState(() => localStorage.getItem('andu_mouvement_address') || 'Dakar, Sénégal');
+  const [mouvementCitation, setMouvementCitation] = useState(() => localStorage.getItem('andu_mouvement_citation') || "Le nawle, c'est la dignité retrouvée par le travail de tous.");
+  const [adminDisplayName, setAdminDisplayName] = useState(() => localStorage.getItem('andu_admin_display_name') || 'Secrétariat National');
+  const [soundNotifications, setSoundNotifications] = useState(() => localStorage.getItem('andu_sound_notifications') !== 'false');
+  const [autoPublishArticles, setAutoPublishArticles] = useState(() => localStorage.getItem('andu_auto_publish') !== 'false');
+
+  const handleSaveGeneralSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('andu_mouvement_name', mouvementName);
+    localStorage.setItem('andu_mouvement_slogan', mouvementSlogan);
+    localStorage.setItem('andu_mouvement_phone', mouvementPhone);
+    localStorage.setItem('andu_mouvement_email', mouvementEmail);
+    localStorage.setItem('andu_mouvement_address', mouvementAddress);
+    localStorage.setItem('andu_mouvement_citation', mouvementCitation);
+    
+    setSettingsSaveFeedback('Informations du mouvement enregistrées avec succès !');
+    setTimeout(() => setSettingsSaveFeedback(null), 4000);
+  };
+
+  const handleSaveSecuritySettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('andu_admin_display_name', adminDisplayName);
+    setSettingsSaveFeedback('Profil administrateur mis à jour avec succès !');
+    setTimeout(() => setSettingsSaveFeedback(null), 4000);
+  };
+
+  const handleSavePrefsSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('andu_sound_notifications', soundNotifications ? 'true' : 'false');
+    localStorage.setItem('andu_auto_publish', autoPublishArticles ? 'true' : 'false');
+    setSettingsSaveFeedback('Préférences administratives sauvegardées !');
+    setTimeout(() => setSettingsSaveFeedback(null), 4000);
+  };
+
+  const handleDownloadTable = async (table: 'join_requests' | 'contact_messages') => {
+    const label = table === 'join_requests' ? 'militants' : 'messages';
+    setExportLoading(table);
+    try {
+      const { data: records, error } = await supabase.from(table).select('*');
+      if (error) throw error;
+      
+      const mappedRecords = (records || []).map(row => mapRow(row));
+      
+      // Generate a formatted JSON file
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(mappedRecords, null, 2)
+      )}`;
+      
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute('download', `andu_nawle_backup_${label}_${format(new Date(), 'yyyy-MM-dd')}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      
+      setSettingsSaveFeedback(`Exportation réussie pour la table : ${table} !`);
+      setTimeout(() => setSettingsSaveFeedback(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erreur d'exportation : ${err.message || err}`);
+    } finally {
+      setExportLoading(null);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -980,36 +1061,334 @@ export default function Dashboard() {
         )}
 
         {currentView === 'settings' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-8 border-b pb-4">Paramètres du Compte</h3>
-            <div className="space-y-8 max-w-md">
-              <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  <span className="font-bold">Note :</span> Vos accès administratifs sont régis par l'email lié à votre compte Supabase.
-                </p>
-              </div>
-              
-              <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Email Administrateur</label>
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <User size={16} className="text-gray-400" />
-                    {adminEmail}
+                  <h3 className="text-xl font-bold text-gray-900">Paramètres de la Plateforme</h3>
+                  <p className="text-xs text-gray-400 mt-1">Configurez les informations officielles du mouvement, gérez la sécurité et exportez vos données.</p>
+                </div>
+                {settingsSaveFeedback && (
+                  <div className="animate-fade-in flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-150 px-3.5 py-2 rounded-xl text-xs font-bold text-[#0F5132]">
+                    <Check size={14} className="text-emerald-500 shrink-0" />
+                    <span>{settingsSaveFeedback}</span>
                   </div>
-                </div>
-                <div className="pt-4">
-                  <p className="text-xs text-blue-500 italic mb-4">Pour changer votre mot de passe, déconnectez-vous et utilisez la fonction "Mot de passe oublié" sur la page de connexion.</p>
-                  <button 
-                    onClick={handleLogout}
-                    className="flex items-center justify-center gap-2 w-full p-4 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-all border border-red-100"
-                  >
-                    <LogOut size={18} /> SE DÉCONNECTER MAINTENANT
-                  </button>
-                </div>
+                )}
               </div>
 
-              <div className="pt-10 border-t border-gray-50 text-center">
-                <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">Version du panel 1.0.2</p>
+              {/* Sub-tabs Navigation */}
+              <div className="flex flex-wrap gap-1.5 mt-5 border-b border-gray-100 pb-2">
+                <button
+                  onClick={() => setSettingsActiveSubTab('general')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    settingsActiveSubTab === 'general'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Building size={14} /> Mouvement
+                </button>
+                <button
+                  onClick={() => setSettingsActiveSubTab('security')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    settingsActiveSubTab === 'security'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Shield size={14} /> Profil & Sécurité
+                </button>
+                <button
+                  onClick={() => setSettingsActiveSubTab('data_export')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    settingsActiveSubTab === 'data_export'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Database size={14} /> Export / Sauvegarde
+                </button>
+                <button
+                  onClick={() => setSettingsActiveSubTab('prefs')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    settingsActiveSubTab === 'prefs'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Bell size={14} /> Préférences
+                </button>
+              </div>
+
+              {/* General Settings */}
+              {settingsActiveSubTab === 'general' && (
+                <form onSubmit={handleSaveGeneralSettings} className="space-y-5 mt-6 max-w-2xl">
+                  <div className="bg-blue-50/20 border border-blue-100/40 p-4 rounded-xl text-xs text-blue-800 leading-relaxed">
+                    <span className="font-bold">Info :</span> Ces informations modifient les valeurs affichées lors de la communication ou des exports administratifs du mouvement.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nom Officiel du Mouvement</label>
+                      <input
+                        type="text"
+                        required
+                        value={mouvementName}
+                        onChange={(e) => setMouvementName(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="Ex: ANDU NAWLE"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Email de Support / Contact</label>
+                      <input
+                        type="email"
+                        required
+                        value={mouvementEmail}
+                        onChange={(e) => setMouvementEmail(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="Ex: contact@andunawle.sn"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Téléphone Officiel Officieux</label>
+                      <input
+                        type="text"
+                        required
+                        value={mouvementPhone}
+                        onChange={(e) => setMouvementPhone(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="Ex: +221 77 123 45 67"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Adresse du Siège / Permanence</label>
+                      <input
+                        type="text"
+                        required
+                        value={mouvementAddress}
+                        onChange={(e) => setMouvementAddress(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="Ex: Dakar, Sénégal"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Slogan / Sous-titre de la plateforme</label>
+                    <textarea
+                      value={mouvementSlogan}
+                      onChange={(e) => setMouvementSlogan(e.target.value)}
+                      rows={2}
+                      className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      placeholder="Indiquez le slogan majeur du mouvement..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Citation Politique / Devise de Référence</label>
+                    <input
+                      type="text"
+                      value={mouvementCitation}
+                      onChange={(e) => setMouvementCitation(e.target.value)}
+                      className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium italic focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      placeholder="Ex: Le nawle, c'est la dignité retrouvée..."
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 px-6 py-3 bg-[#0047AB] text-white hover:bg-[#002B6B] rounded-xl font-bold text-xs transition-all shadow-md active:scale-95"
+                    >
+                      <Save size={14} /> ENREGISTRER LES INFORMATIONS
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Security settings display */}
+              {settingsActiveSubTab === 'security' && (
+                <form onSubmit={handleSaveSecuritySettings} className="space-y-6 mt-6 max-w-md">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Compte Administrateur Connecté</label>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                        <User size={16} className="text-gray-400" />
+                        <span className="text-sm select-all">{adminEmail || 'admin@andunawle.sn'}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nom d'affichage administratif</label>
+                      <input
+                        type="text"
+                        required
+                        value={adminDisplayName}
+                        onChange={(e) => setAdminDisplayName(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="Ex: Secrétariat National"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-xs text-amber-700 space-y-2">
+                    <p className="font-bold">Changement de mot de passe :</p>
+                    <p className="leading-relaxed">Les accès sont gérés à travers le module sécurisé de Supabase Auth. Pour réinitialiser ou modifier votre mot de passe, utilisez l'option de mot de passe oublié sur l'écran d'accès ou contactez les administrateurs cloud du projet.</p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="flex items-center justify-center gap-2 p-3.5 bg-[#0047AB] text-white rounded-xl font-bold text-xs hover:bg-[#002B6B] transition-all shadow-md"
+                    >
+                      <Save size={14} /> METTRE À JOUR LE PROFIL
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex items-center justify-center gap-2 p-3.5 bg-red-50 text-red-600 rounded-xl font-bold text-xs hover:bg-red-100 transition-all border border-red-100"
+                    >
+                      <LogOut size={14} /> SE DÉCONNECTER DU PANEL
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Database backups / CSV Export */}
+              {settingsActiveSubTab === 'data_export' && (
+                <div className="space-y-6 mt-6 max-w-2xl">
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-sm text-gray-800">Sauvegarde des bases de données</h4>
+                    <p className="text-xs text-gray-500 mt-1">Vous pouvez exporter l'intégralité des données d'utilisateurs collectées sous format standard pour les sauvegarder localement ou les intégrer dans Excel / un CRM tiers.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Militants Table Block */}
+                    <div className="p-5 bg-white rounded-xl border border-gray-150 space-y-4 hover:border-blue-200 transition-colors flex flex-col justify-between">
+                      <div className="space-y-1.5 font-sans">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded">Régistre Militant</span>
+                          <Database size={16} className="text-blue-500" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-sm pt-1">Militants et Sympathisants</h4>
+                        <p className="text-xs text-gray-500 leading-relaxed">Télécharger l'ensemble des inscriptions reçues contenant noms, prénoms, coordonnées téléphoniques, adresses email, localité renseignée, professions et types d'engagement.</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={exportLoading !== null}
+                        onClick={() => handleDownloadTable('join_requests')}
+                        className="flex items-center justify-center gap-2 w-full p-3 bg-blue-50 hover:bg-blue-100 text-[#0047AB] rounded-xl text-xs font-bold transition-all border border-blue-100 disabled:opacity-50 mt-4"
+                      >
+                        {exportLoading === 'join_requests' ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            Génération en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Download size={14} /> Exporter en JSON (.json)
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Messages Table Block */}
+                    <div className="p-5 bg-white rounded-xl border border-gray-150 space-y-4 hover:border-indigo-200 transition-colors flex flex-col justify-between">
+                      <div className="space-y-1.5 font-sans">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">Courriers Reçus</span>
+                          <Mail size={16} className="text-indigo-500" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-sm pt-1">Boîte de Réception Contacts</h4>
+                        <p className="text-xs text-gray-500 leading-relaxed">Télécharger l'intégralité des messages de contact envoyés par les citoyens à travers le formulaire public du site web avec leurs coordonnées email et numéros de téléphone.</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={exportLoading !== null}
+                        onClick={() => handleDownloadTable('contact_messages')}
+                        className="flex items-center justify-center gap-2 w-full p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all border border-indigo-100 disabled:opacity-50 mt-4"
+                      >
+                        {exportLoading === 'contact_messages' ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            Génération en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Download size={14} /> Exporter en JSON (.json)
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Preferences Subtab */}
+              {settingsActiveSubTab === 'prefs' && (
+                <form onSubmit={handleSavePrefsSettings} className="space-y-6 mt-6 max-w-xl">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="space-y-1 pr-4">
+                        <label className="text-xs font-bold text-gray-900 uppercase block tracking-wider">Notifications Sonores</label>
+                        <p className="text-[11px] text-gray-400">Jouer une tonalité discrète à la réception de nouveaux courriers de citoyens ou d'inscriptions de militants.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSoundNotifications(!soundNotifications)}
+                        className={`w-11 h-6 rounded-full transition-colors relative shrink-0 focus:outline-none ${
+                          soundNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 bg-white w-5 h-5 rounded-full shadow-sm transition-transform ${
+                            soundNotifications ? 'translate-x-5.5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-start justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="space-y-1 pr-4">
+                        <label className="text-xs font-bold text-gray-900 uppercase block tracking-wider">Validation automatique des articles</label>
+                        <p className="text-[11px] text-gray-400">Publier instantanément les articles d'actualités rédigés par l'administration sans passer par un statut d'approbation intermédiaire.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAutoPublishArticles(!autoPublishArticles)}
+                        className={`w-11 h-6 rounded-full transition-colors relative shrink-0 focus:outline-none ${
+                          autoPublishArticles ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 bg-white w-5 h-5 rounded-full shadow-sm transition-transform ${
+                            autoPublishArticles ? 'translate-x-5.5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 px-6 py-3 bg-[#0047AB] text-white hover:bg-[#002B6B] rounded-xl font-bold text-xs transition-all shadow-md active:scale-95"
+                    >
+                      <Save size={14} /> ENREGISTRER LES PRÉFÉRENCES
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="pt-10 border-t border-gray-100 text-center mt-8">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ANDU NAWLE • Version du Panel Administration 1.1.0</p>
               </div>
             </div>
           </div>
