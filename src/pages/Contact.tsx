@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle, Facebook, Twitter, Instagram, Youtube, Linkedin } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useSettings } from '../context/SettingsContext';
 
 export default function Contact() {
-  const { mouvementPhone, mouvementEmail, mouvementAddress } = useSettings();
+  const { 
+    mouvementPhone, 
+    mouvementEmail, 
+    mouvementAddress,
+    facebookUrl,
+    twitterUrl,
+    instagramUrl,
+    youtubeUrl,
+    linkedinUrl,
+    tiktokUrl
+  } = useSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -96,14 +106,41 @@ export default function Contact() {
           </div>
 
           <div className="bg-[#0047AB] text-white p-8 rounded-2xl shadow-lg relative overflow-hidden">
-            <h3 className="text-xl font-bold mb-4 relative z-10">Réseaux Sociaux</h3>
+            <h3 className="text-xl font-bold mb-2 relative z-10">Réseaux Sociaux</h3>
             <p className="text-blue-100 text-sm mb-6 relative z-10">Suivez-nous pour ne rien rater de l'actualité politique et territoriale.</p>
-            <div className="flex gap-4 relative z-10">
-              {['FB', 'TW', 'IG', 'YT'].map(s => (
-                <div key={s} className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center font-bold text-xs hover:bg-white hover:text-[#0047AB] transition-colors cursor-pointer">
-                  {s}
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-2.5 relative z-10">
+              {facebookUrl && (
+                <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="Facebook">
+                  <Facebook size={18} />
+                </a>
+              )}
+              {twitterUrl && (
+                <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="Twitter / X">
+                  <Twitter size={18} />
+                </a>
+              )}
+              {instagramUrl && (
+                <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="Instagram">
+                  <Instagram size={18} />
+                </a>
+              )}
+              {youtubeUrl && (
+                <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="YouTube">
+                  <Youtube size={18} />
+                </a>
+              )}
+              {linkedinUrl && (
+                <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="LinkedIn">
+                  <Linkedin size={18} />
+                </a>
+              )}
+              {tiktokUrl && (
+                <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white hover:text-[#0047AB] transition-colors" title="TikTok">
+                  <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.09-1.51-.71-.53-1.3-1.22-1.77-1.97V14.4c.03 2.15-.65 4.39-2.12 6.01-1.63 1.88-4.22 2.72-6.68 2.22-2.58-.45-4.88-2.31-5.69-4.82-1-2.98-.12-6.52 2.21-8.54 1.95-1.78 4.79-2.29 7.22-1.52V11.2c-1.49-.57-3.2-.27-4.41.82-1.09.95-1.5 2.53-1.12 3.94.33 1.25 1.45 2.24 2.74 2.45 1.55.3 3.2-.28 3.93-1.68.32-.57.44-1.22.42-1.87-.03-2.61-.01-5.2-.02-7.81h4.04c-.05-.01.07-.4-.01-.01-.01-2.45-1.64-4.66-4.01-5.29H12.53v-.02z"/>
+                  </svg>
+                </a>
+              )}
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
           </div>

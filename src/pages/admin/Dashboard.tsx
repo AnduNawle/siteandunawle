@@ -82,9 +82,16 @@ export default function Dashboard() {
   const [adminEmail, setAdminEmail] = useState<string>('');
 
   // Rich Settings States with localStorage integration
-  const [settingsActiveSubTab, setSettingsActiveSubTab] = useState<'general' | 'security' | 'data_export' | 'prefs'>('general');
+  const [settingsActiveSubTab, setSettingsActiveSubTab] = useState<'general' | 'social' | 'security' | 'data_export' | 'prefs'>('general');
   const [settingsSaveFeedback, setSettingsSaveFeedback] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState<string | null>(null);
+
+  const [facebookUrl, setFacebookUrl] = useState(() => localStorage.getItem('andu_facebook_url') || 'https://facebook.com');
+  const [twitterUrl, setTwitterUrl] = useState(() => localStorage.getItem('andu_twitter_url') || 'https://twitter.com');
+  const [instagramUrl, setInstagramUrl] = useState(() => localStorage.getItem('andu_instagram_url') || 'https://instagram.com');
+  const [youtubeUrl, setYoutubeUrl] = useState(() => localStorage.getItem('andu_youtube_url') || 'https://youtube.com');
+  const [linkedinUrl, setLinkedinUrl] = useState(() => localStorage.getItem('andu_linkedin_url') || 'https://linkedin.com');
+  const [tiktokUrl, setTiktokUrl] = useState(() => localStorage.getItem('andu_tiktok_url') || 'https://tiktok.com');
 
   const [mouvementName, setMouvementName] = useState(() => localStorage.getItem('andu_mouvement_name') || 'Andu Nawle');
   const [mouvementSlogan, setMouvementSlogan] = useState(() => localStorage.getItem('andu_mouvement_slogan') || 'Savoir, Volonté, Action — Unir les forces pour le progrès national');
@@ -166,6 +173,60 @@ export default function Dashboard() {
 
     setSettingsSaveFeedback('Préférences administratives sauvegardées et synchronisées !');
     setTimeout(() => setSettingsSaveFeedback(null), 4000);
+  };
+
+  const handleSaveSocialSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('andu_facebook_url', facebookUrl);
+    localStorage.setItem('andu_twitter_url', twitterUrl);
+    localStorage.setItem('andu_instagram_url', instagramUrl);
+    localStorage.setItem('andu_youtube_url', youtubeUrl);
+    localStorage.setItem('andu_linkedin_url', linkedinUrl);
+    localStorage.setItem('andu_tiktok_url', tiktokUrl);
+
+    setSettingsSaveFeedback('Sauvegarde locale, synchronisation base de données...');
+
+    try {
+      // 1. Try to upsert inside social_links table
+      const { error: err1 } = await supabase.from('social_links').upsert({
+        id: 1,
+        facebook_url: facebookUrl,
+        facebookUrl: facebookUrl,
+        twitter_url: twitterUrl,
+        twitterUrl: twitterUrl,
+        instagram_url: instagramUrl,
+        instagramUrl: instagramUrl,
+        youtube_url: youtubeUrl,
+        youtubeUrl: youtubeUrl,
+        linkedin_url: linkedinUrl,
+        linkedinUrl: linkedinUrl,
+        tiktok_url: tiktokUrl,
+        tiktokUrl: tiktokUrl,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      // 2. Also save as key-value pairs inside settings table to provide absolute fallback
+      const kvSocials = [
+        { key: 'andu_facebook_url', value: facebookUrl },
+        { key: 'andu_twitter_url', value: twitterUrl },
+        { key: 'andu_instagram_url', value: instagramUrl },
+        { key: 'andu_youtube_url', value: youtubeUrl },
+        { key: 'andu_linkedin_url', value: linkedinUrl },
+        { key: 'andu_tiktok_url', value: tiktokUrl }
+      ];
+
+      for (const pair of kvSocials) {
+        await supabase.from('settings').upsert(pair);
+      }
+
+      await refreshSettings();
+      setSettingsSaveFeedback('Réseaux sociaux sauvegardés et synchronisés !');
+      setTimeout(() => setSettingsSaveFeedback(null), 4000);
+    } catch (dbErr) {
+      console.warn("Could not synchronize socials with database. Local state remains valid:", dbErr);
+      setSettingsSaveFeedback('Enregistré en local uniquement.');
+      setTimeout(() => setSettingsSaveFeedback(null), 4000);
+    }
   };
 
   const syncSettingsToSupabase = async (updates: Record<string, any>) => {
@@ -334,7 +395,61 @@ export default function Dashboard() {
         console.warn("Could not load settings from Supabase, relying on localStorage fallback:", err);
       }
     };
+
+    const loadRemoteSocials = async () => {
+      try {
+        const { data, error } = await supabase.from('social_links').select('*');
+        if (!error && data && data.length > 0) {
+          const row = data[0];
+          if (row.platform !== undefined) {
+             data.forEach((item: any) => {
+               const p = item.platform?.toLowerCase();
+               const u = item.url;
+               if (p === 'facebook') { setFacebookUrl(u); localStorage.setItem('andu_facebook_url', u); }
+               if (p === 'twitter' || p === 'x') { setTwitterUrl(u); localStorage.setItem('andu_twitter_url', u); }
+               if (p === 'instagram') { setInstagramUrl(u); localStorage.setItem('andu_instagram_url', u); }
+               if (p === 'youtube') { setYoutubeUrl(u); localStorage.setItem('andu_youtube_url', u); }
+               if (p === 'linkedin') { setLinkedinUrl(u); localStorage.setItem('andu_linkedin_url', u); }
+               if (p === 'tiktok') { setTiktokUrl(u); localStorage.setItem('andu_tiktok_url', u); }
+             });
+          } else {
+             const fbVal = row.facebook_url || row.facebookUrl;
+             const twVal = row.twitter_url || row.twitterUrl;
+             const igVal = row.instagram_url || row.instagramUrl;
+             const ytVal = row.youtube_url || row.youtubeUrl;
+             const liVal = row.linkedin_url || row.linkedinUrl;
+             const ttVal = row.tiktok_url || row.tiktokUrl;
+
+             if (fbVal) { setFacebookUrl(fbVal); localStorage.setItem('andu_facebook_url', fbVal); }
+             if (twVal) { setTwitterUrl(twVal); localStorage.setItem('andu_twitter_url', twVal); }
+             if (igVal) { setInstagramUrl(igVal); localStorage.setItem('andu_instagram_url', igVal); }
+             if (ytVal) { setYoutubeUrl(ytVal); localStorage.setItem('andu_youtube_url', ytVal); }
+             if (liVal) { setLinkedinUrl(liVal); localStorage.setItem('andu_linkedin_url', liVal); }
+             if (ttVal) { setTiktokUrl(ttVal); localStorage.setItem('andu_tiktok_url', ttVal); }
+          }
+        } else {
+          // Fallback to checking settings key-value rows
+          const { data: sData, error: sErr } = await supabase.from('settings').select('*');
+          if (!sErr && sData) {
+            sData.forEach((row: any) => {
+              const k = row.key;
+              const v = row.value;
+              if (k === 'andu_facebook_url' && v) { setFacebookUrl(v); localStorage.setItem('andu_facebook_url', v); }
+              if (k === 'andu_twitter_url' && v) { setTwitterUrl(v); localStorage.setItem('andu_twitter_url', v); }
+              if (k === 'andu_instagram_url' && v) { setInstagramUrl(v); localStorage.setItem('andu_instagram_url', v); }
+              if (k === 'andu_youtube_url' && v) { setYoutubeUrl(v); localStorage.setItem('andu_youtube_url', v); }
+              if (k === 'andu_linkedin_url' && v) { setLinkedinUrl(v); localStorage.setItem('andu_linkedin_url', v); }
+              if (k === 'andu_tiktok_url' && v) { setTiktokUrl(v); localStorage.setItem('andu_tiktok_url', v); }
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load social media settings from Supabase:", err);
+      }
+    };
+
     loadRemoteSettings();
+    loadRemoteSocials();
   }, []);
 
   const handleDownloadTable = async (table: 'join_requests' | 'contact_messages' | 'newsletter_subscriptions') => {
@@ -1380,6 +1495,16 @@ export default function Dashboard() {
                   <Building size={14} /> Mouvement
                 </button>
                 <button
+                  onClick={() => setSettingsActiveSubTab('social')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    settingsActiveSubTab === 'social'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Globe size={14} /> Réseaux Sociaux
+                </button>
+                <button
                   onClick={() => setSettingsActiveSubTab('security')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                     settingsActiveSubTab === 'security'
@@ -1496,6 +1621,91 @@ export default function Dashboard() {
                       className="flex items-center gap-2 px-6 py-3 bg-[#0047AB] text-white hover:bg-[#002B6B] rounded-xl font-bold text-xs transition-all shadow-md active:scale-95"
                     >
                       <Save size={14} /> ENREGISTRER LES INFORMATIONS
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {settingsActiveSubTab === 'social' && (
+                <form onSubmit={handleSaveSocialSettings} className="space-y-5 mt-6 max-w-2xl">
+                  <div className="bg-blue-50/20 border border-blue-100/40 p-4 rounded-xl text-xs text-blue-800 leading-relaxed">
+                    <span className="font-bold">Info :</span> Spécifiez les adresses complètes de vos réseaux sociaux officiels (ex : <code className="bg-blue-50 p-0.5 rounded font-mono">https://facebook.com/monparti</code>). Les icônes correspondantes s'afficheront automatiquement dans le pied de page (Footer) et la page de contact.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien Facebook</label>
+                      <input
+                        type="url"
+                        value={facebookUrl}
+                        onChange={(e) => setFacebookUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://facebook.com/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien Twitter / X</label>
+                      <input
+                        type="url"
+                        value={twitterUrl}
+                        onChange={(e) => setTwitterUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://twitter.com/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien Instagram</label>
+                      <input
+                        type="url"
+                        value={instagramUrl}
+                        onChange={(e) => setInstagramUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://instagram.com/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien YouTube</label>
+                      <input
+                        type="url"
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://youtube.com/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien LinkedIn</label>
+                      <input
+                        type="url"
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://linkedin.com/company/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lien TikTok</label>
+                      <input
+                        type="url"
+                        value={tiktokUrl}
+                        onChange={(e) => setTiktokUrl(e.target.value)}
+                        className="w-full text-sm p-4 bg-gray-50 rounded-xl border border-gray-100 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://tiktok.com/@..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 px-6 py-3 bg-[#0047AB] text-white hover:bg-[#002B6B] rounded-xl font-bold text-xs transition-all shadow-md active:scale-95"
+                    >
+                      <Save size={14} /> ENREGISTRER LES RÉSEAUX SOCIAUX
                     </button>
                   </div>
                 </form>
