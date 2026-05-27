@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Trash2,
   Mail,
+  Phone,
   User,
   MapPin,
   Loader2,
@@ -654,7 +655,23 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <h4 className="font-bold text-gray-900">{msg.subject}</h4>
-                        <p className="text-xs text-gray-400">De: <span className="text-gray-900 font-medium">{msg.name}</span> ({msg.email})</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400 mt-1">
+                          <span>De : <span className="text-gray-900 font-semibold">{msg.name}</span></span>
+                          <span className="text-gray-200">|</span>
+                          <span className="flex items-center gap-1">
+                            <Mail size={12} className="text-gray-400 shrink-0" />
+                            <span className="text-gray-700 font-medium select-all">{msg.email}</span>
+                          </span>
+                          {msg.phone && (
+                            <>
+                              <span className="text-gray-200">|</span>
+                              <span className="flex items-center gap-1">
+                                <Phone size={11} className="text-gray-400 shrink-0" />
+                                <span className="text-gray-700 font-semibold select-all">{msg.phone}</span>
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
