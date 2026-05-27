@@ -174,16 +174,23 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // Reset loading and clear previous view data immediately on tab/view switch
+    setLoading(true);
+    setData([]);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAdminEmail(session?.user?.email || '');
     });
-    fetchStats().then(() => {
-      if (currentView === 'overview') {
+
+    if (currentView === 'overview') {
+      fetchStats().then(() => {
         setLoading(false);
-      } else {
-        fetchData(currentView);
-      }
-    });
+      });
+    } else {
+      // Run stats fetch and view data fetch in parallel to prevent any latency in loading the view
+      fetchStats();
+      fetchData(currentView);
+    }
   }, [currentView]);
 
   const handleDelete = async (id: string, col: string) => {
