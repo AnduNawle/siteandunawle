@@ -56,9 +56,9 @@ export default function Footer() {
   return (
     <footer className="bg-[#002B6B] text-white">
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-1">
+          <div className="col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
                 <img src="./images/logo.png" alt="Logo" className="w-9 h-9 object-contain" referrerPolicy="no-referrer" />
@@ -68,14 +68,14 @@ export default function Footer() {
             <p className="text-blue-100 text-sm mb-6">
               {mouvementSlogan}
             </p>
-            <div className="flex space-x-3">
-              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="Facebook"><Facebook size={18} /></a>}
-              {twitterUrl && <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="Twitter / X"><Twitter size={18} /></a>}
-              {instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="Instagram"><Instagram size={18} /></a>}
-              {youtubeUrl && <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="YouTube"><Youtube size={18} /></a>}
-              {linkedinUrl && <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="LinkedIn"><Linkedin size={18} /></a>}
+            <div className="flex flex-wrap gap-2">
+              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="Facebook"><Facebook size={18} /></a>}
+              {twitterUrl && <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="Twitter / X"><Twitter size={18} /></a>}
+              {instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="Instagram"><Instagram size={18} /></a>}
+              {youtubeUrl && <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="YouTube"><Youtube size={18} /></a>}
+              {linkedinUrl && <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="LinkedIn"><Linkedin size={18} /></a>}
               {tiktokUrl && (
-                <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg" title="TikTok">
+                <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-950/40 rounded-lg block" title="TikTok">
                   <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.09-1.51-.71-.53-1.3-1.22-1.77-1.97V14.4c.03 2.15-.65 4.39-2.12 6.01-1.63 1.88-4.22 2.72-6.68 2.22-2.58-.45-4.88-2.31-5.69-4.82-1-2.98-.12-6.52 2.21-8.54 1.95-1.78 4.79-2.29 7.22-1.52V11.2c-1.49-.57-3.2-.27-4.41.82-1.09.95-1.5 2.53-1.12 3.94.33 1.25 1.45 2.24 2.74 2.45 1.55.3 3.2-.28 3.93-1.68.32-.57.44-1.22.42-1.87-.03-2.61-.01-5.2-.02-7.81h4.04c-.05-.01.07-.4-.01-.01-.01-2.45-1.64-4.66-4.01-5.29H12.53v-.02z"/>
                   </svg>
