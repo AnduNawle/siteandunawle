@@ -242,7 +242,7 @@ export default function Home() {
             <div className="flex-1 relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl relative z-10">
                 <img 
-                  src="/images/partileadership.png" 
+                  src="./images/partileadership.png" 
                   alt="Parti leadership" 
                   className="w-full h-full object-cover"
                 />

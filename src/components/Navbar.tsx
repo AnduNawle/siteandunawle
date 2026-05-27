@@ -37,7 +37,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold">
                <img 
-          src="/images/logo.png" 
+          src="./images/logo.png" 
           alt="logo" 
           className="rounded-[10px]"
         />

@@ -178,11 +178,11 @@ export default function TheParty() {
             <div className="flex gap-4 md:gap-6">
               <div className="w-full mt-12 aspect-[3/4] bg-blue-800/50 rounded-3xl overflow-hidden grayscale hover:grayscale-0 transition-all duration-500 shadow-2xl relative">
                 <div className="absolute inset-0 border border-white/20 rounded-3xl z-10 pointer-events-none"/>
-                <img src="/images/maguette.jpg" alt="Leader 1" className="w-full h-full object-cover" />
+                <img src="./images/maguette.jpg" alt="Leader 1" className="w-full h-full object-cover" />
               </div>
               <div className="w-full aspect-[3/4] bg-blue-800/50 rounded-3xl overflow-hidden grayscale hover:grayscale-0 transition-all duration-500 shadow-2xl relative -translate-y-8">
                 <div className="absolute inset-0 border border-white/20 rounded-3xl z-10 pointer-events-none"/>
-                <img src="/images/maget.jpg" alt="Leader 2" className="w-full h-full object-cover" />
+                <img src="./images/maget.jpg" alt="Leader 2" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

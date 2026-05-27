@@ -9,7 +9,7 @@ export default function Hero() {
       {/* Background Overlay with Image placeholder style */}
       <div className="absolute inset-0 z-0 opacity-80">
         <img 
-          src="/images/back-1.png" 
+          src="./images/back-1.png" 
           alt="Andu Nawle Rally" 
           className="w-full h-full object-cover"
         />
