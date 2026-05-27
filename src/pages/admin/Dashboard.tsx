@@ -94,7 +94,7 @@ export default function Dashboard() {
   const [soundNotifications, setSoundNotifications] = useState(() => localStorage.getItem('andu_sound_notifications') !== 'false');
   const [autoPublishArticles, setAutoPublishArticles] = useState(() => localStorage.getItem('andu_auto_publish') !== 'false');
 
-  const handleSaveGeneralSettings = (e: React.FormEvent) => {
+  const handleSaveGeneralSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('andu_mouvement_name', mouvementName);
     localStorage.setItem('andu_mouvement_slogan', mouvementSlogan);
@@ -103,24 +103,232 @@ export default function Dashboard() {
     localStorage.setItem('andu_mouvement_address', mouvementAddress);
     localStorage.setItem('andu_mouvement_citation', mouvementCitation);
     
-    setSettingsSaveFeedback('Informations du mouvement enregistrées avec succès !');
+    setSettingsSaveFeedback('Sauvegarde locale effectuée, synchronisation base de données...');
+
+    await syncSettingsToSupabase({
+      mouvementName,
+      mouvementSlogan,
+      mouvementPhone,
+      mouvementEmail,
+      mouvementAddress,
+      mouvementCitation,
+      adminDisplayName,
+      soundNotifications,
+      autoPublishArticles
+    });
+
+    setSettingsSaveFeedback('Informations du mouvement enregistrées et synchronisées avec succès !');
     setTimeout(() => setSettingsSaveFeedback(null), 4000);
   };
 
-  const handleSaveSecuritySettings = (e: React.FormEvent) => {
+  const handleSaveSecuritySettings = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('andu_admin_display_name', adminDisplayName);
-    setSettingsSaveFeedback('Profil administrateur mis à jour avec succès !');
+    
+    setSettingsSaveFeedback('Sauvegarde locale, synchronisation base de données...');
+    
+    await syncSettingsToSupabase({
+      mouvementName,
+      mouvementSlogan,
+      mouvementPhone,
+      mouvementEmail,
+      mouvementAddress,
+      mouvementCitation,
+      adminDisplayName,
+      soundNotifications,
+      autoPublishArticles
+    });
+
+    setSettingsSaveFeedback('Profil administrateur mis à jour et synchronisé avec succès !');
     setTimeout(() => setSettingsSaveFeedback(null), 4000);
   };
 
-  const handleSavePrefsSettings = (e: React.FormEvent) => {
+  const handleSavePrefsSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('andu_sound_notifications', soundNotifications ? 'true' : 'false');
     localStorage.setItem('andu_auto_publish', autoPublishArticles ? 'true' : 'false');
-    setSettingsSaveFeedback('Préférences administratives sauvegardées !');
+    
+    setSettingsSaveFeedback('Sauvegarde locale, synchronisation base de données...');
+
+    await syncSettingsToSupabase({
+      mouvementName,
+      mouvementSlogan,
+      mouvementPhone,
+      mouvementEmail,
+      mouvementAddress,
+      mouvementCitation,
+      adminDisplayName,
+      soundNotifications,
+      autoPublishArticles
+    });
+
+    setSettingsSaveFeedback('Préférences administratives sauvegardées et synchronisées !');
     setTimeout(() => setSettingsSaveFeedback(null), 4000);
   };
+
+  const syncSettingsToSupabase = async (updates: Record<string, any>) => {
+    try {
+      // 1. Essayer de faire un upsert sur une table single-row 'settings' (avec id: 1)
+      const { error } = await supabase.from('settings').upsert({
+        id: 1,
+        mouvement_name: updates.mouvementName,
+        mouvementName: updates.mouvementName,
+        mouvement_slogan: updates.mouvementSlogan,
+        mouvementSlogan: updates.mouvementSlogan,
+        mouvement_phone: updates.mouvementPhone,
+        mouvementPhone: updates.mouvementPhone,
+        mouvement_email: updates.mouvementEmail,
+        mouvementEmail: updates.mouvementEmail,
+        mouvement_address: updates.mouvementAddress,
+        mouvementAddress: updates.mouvementAddress,
+        mouvement_citation: updates.mouvementCitation,
+        mouvementCitation: updates.mouvementCitation,
+        admin_display_name: updates.adminDisplayName,
+        adminDisplayName: updates.adminDisplayName,
+        sound_notifications: updates.soundNotifications,
+        soundNotifications: updates.soundNotifications,
+        auto_publish: updates.autoPublishArticles,
+        autoPublishArticles: updates.autoPublishArticles,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      if (error) {
+        // 2. Si l'upsert single-row échoue ou si le format diffère, essayer de sauvegarder comme paires clé-valeur
+        console.warn("Single row upsert to 'settings' failed, trying key-value format...", error);
+        const kvPairs = [
+          { key: 'andu_mouvement_name', value: updates.mouvementName },
+          { key: 'andu_mouvement_slogan', value: updates.mouvementSlogan },
+          { key: 'andu_mouvement_phone', value: updates.mouvementPhone },
+          { key: 'andu_mouvement_email', value: updates.mouvementEmail },
+          { key: 'andu_mouvement_address', value: updates.mouvementAddress },
+          { key: 'andu_mouvement_citation', value: updates.mouvementCitation },
+          { key: 'andu_admin_display_name', value: updates.adminDisplayName },
+          { key: 'andu_sound_notifications', value: updates.soundNotifications ? 'true' : 'false' },
+          { key: 'andu_auto_publish', value: updates.autoPublishArticles ? 'true' : 'false' }
+        ];
+
+        for (const pair of kvPairs) {
+          await supabase.from('settings').upsert(pair);
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Could not write to 'settings' table, trying 'site_settings' as backup...", dbErr);
+      try {
+        await supabase.from('site_settings').upsert({
+          id: 1,
+          mouvementName: updates.mouvementName,
+          mouvementSlogan: updates.mouvementSlogan,
+          mouvementPhone: updates.mouvementPhone,
+          mouvementEmail: updates.mouvementEmail,
+          mouvementAddress: updates.mouvementAddress,
+          mouvementCitation: updates.mouvementCitation,
+          adminDisplayName: updates.adminDisplayName,
+          soundNotifications: updates.soundNotifications,
+          autoPublishArticles: updates.autoPublishArticles,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      } catch (siteErr) {
+        console.error("Could not write parameters to database tables:", siteErr);
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Charger les paramètres distants de la base de données si possible au montage du composant
+    const loadRemoteSettings = async () => {
+      try {
+        const { data, error } = await supabase.from('settings').select('*');
+        if (!error && data && data.length > 0) {
+          const row = data[0];
+          // Vérifier si c'est un format single-row
+          if (row.mouvement_name !== undefined || row.mouvementName !== undefined) {
+            const name = row.mouvement_name || row.mouvementName;
+            const slogan = row.mouvement_slogan || row.mouvementSlogan;
+            const phone = row.mouvement_phone || row.mouvementPhone;
+            const email = row.mouvement_email || row.mouvementEmail;
+            const address = row.mouvement_address || row.mouvementAddress;
+            const citation = row.mouvement_citation || row.mouvementCitation;
+            const adminDisp = row.admin_display_name || row.adminDisplayName;
+            const soundNotifs = row.sound_notifications ?? row.soundNotifications;
+            const autoPub = row.auto_publish ?? row.autoPublish;
+
+            if (name) { setMouvementName(name); localStorage.setItem('andu_mouvement_name', name); }
+            if (slogan) { setMouvementSlogan(slogan); localStorage.setItem('andu_mouvement_slogan', slogan); }
+            if (phone) { setMouvementPhone(phone); localStorage.setItem('andu_mouvement_phone', phone); }
+            if (email) { setMouvementEmail(email); localStorage.setItem('andu_mouvement_email', email); }
+            if (address) { setMouvementAddress(address); localStorage.setItem('andu_mouvement_address', address); }
+            if (citation) { setMouvementCitation(citation); localStorage.setItem('andu_mouvement_citation', citation); }
+            if (adminDisp) { setAdminDisplayName(adminDisp); localStorage.setItem('andu_admin_display_name', adminDisp); }
+            if (soundNotifs !== undefined) {
+              setSoundNotifications(typeof soundNotifs === 'string' ? soundNotifs === 'true' : !!soundNotifs);
+              localStorage.setItem('andu_sound_notifications', soundNotifs ? 'true' : 'false');
+            }
+            if (autoPub !== undefined) {
+              setAutoPublishArticles(typeof autoPub === 'string' ? autoPub === 'true' : !!autoPub);
+              localStorage.setItem('andu_auto_publish', autoPub ? 'true' : 'false');
+            }
+          } else {
+            // Format clé-valeur
+            data.forEach((item: any) => {
+              const k = item.key || item.name;
+              const v = item.value;
+              if (k && v !== undefined) {
+                if (k === 'andu_mouvement_name') { setMouvementName(v); localStorage.setItem('andu_mouvement_name', v); }
+                if (k === 'andu_mouvement_slogan') { setMouvementSlogan(v); localStorage.setItem('andu_mouvement_slogan', v); }
+                if (k === 'andu_mouvement_phone') { setMouvementPhone(v); localStorage.setItem('andu_mouvement_phone', v); }
+                if (k === 'andu_mouvement_email') { setMouvementEmail(v); localStorage.setItem('andu_mouvement_email', v); }
+                if (k === 'andu_mouvement_address') { setMouvementAddress(v); localStorage.setItem('andu_mouvement_address', v); }
+                if (k === 'andu_mouvement_citation') { setMouvementCitation(v); localStorage.setItem('andu_mouvement_citation', v); }
+                if (k === 'andu_admin_display_name') { setAdminDisplayName(v); localStorage.setItem('andu_admin_display_name', v); }
+                if (k === 'andu_sound_notifications') {
+                  setSoundNotifications(v === 'true');
+                  localStorage.setItem('andu_sound_notifications', v);
+                }
+                if (k === 'andu_auto_publish') {
+                  setAutoPublishArticles(v === 'true');
+                  localStorage.setItem('andu_auto_publish', v);
+                }
+              }
+            });
+          }
+        } else {
+          // Essayer la table 'site_settings'
+          const { data: siteData, error: siteErr } = await supabase.from('site_settings').select('*');
+          if (!siteErr && siteData && siteData.length > 0) {
+            const row = siteData[0];
+            const name = row.mouvement_name || row.mouvementName;
+            const slogan = row.mouvement_slogan || row.mouvementSlogan;
+            const phone = row.mouvement_phone || row.mouvementPhone;
+            const email = row.mouvement_email || row.mouvementEmail;
+            const address = row.mouvement_address || row.mouvementAddress;
+            const citation = row.mouvement_citation || row.mouvementCitation;
+            const adminDisp = row.admin_display_name || row.adminDisplayName;
+            const soundNotifs = row.sound_notifications ?? row.soundNotifications;
+            const autoPub = row.auto_publish ?? row.autoPublish;
+
+            if (name) { setMouvementName(name); localStorage.setItem('andu_mouvement_name', name); }
+            if (slogan) { setMouvementSlogan(slogan); localStorage.setItem('andu_mouvement_slogan', slogan); }
+            if (phone) { setMouvementPhone(phone); localStorage.setItem('andu_mouvement_phone', phone); }
+            if (email) { setMouvementEmail(email); localStorage.setItem('andu_mouvement_email', email); }
+            if (address) { setMouvementAddress(address); localStorage.setItem('andu_mouvement_address', address); }
+            if (citation) { setMouvementCitation(citation); localStorage.setItem('andu_mouvement_citation', citation); }
+            if (adminDisp) { setAdminDisplayName(adminDisp); localStorage.setItem('andu_admin_display_name', adminDisp); }
+            if (soundNotifs !== undefined) {
+              setSoundNotifications(typeof soundNotifs === 'string' ? soundNotifs === 'true' : !!soundNotifs);
+              localStorage.setItem('andu_sound_notifications', soundNotifs ? 'true' : 'false');
+            }
+            if (autoPub !== undefined) {
+              setAutoPublishArticles(typeof autoPub === 'string' ? autoPub === 'true' : !!autoPub);
+              localStorage.setItem('andu_auto_publish', autoPub ? 'true' : 'false');
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load settings from Supabase, relying on localStorage fallback:", err);
+      }
+    };
+    loadRemoteSettings();
+  }, []);
 
   const handleDownloadTable = async (table: 'join_requests' | 'contact_messages') => {
     const label = table === 'join_requests' ? 'militants' : 'messages';
