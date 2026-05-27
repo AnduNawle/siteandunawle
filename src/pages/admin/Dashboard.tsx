@@ -547,90 +547,125 @@ export default function Dashboard() {
               <div className="p-20 text-center text-gray-400">Aucune inscription pour le moment.</div>
             ) : (
               <>
-                {/* Mobile View: Cards List */}
-                <div className="md:hidden divide-y divide-gray-100">
+                {/* Mobile & Tablet View: Structured Cards List */}
+                <div className="lg:hidden divide-y divide-gray-100">
                   {data.map((item) => {
                     const isExpanded = !!expandedIds[item.id];
                     return (
-                      <div key={item.id} className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
+                      <div key={item.id} className="p-5 space-y-4 hover:bg-gray-50/20 transition-colors">
+                        {/* Header Area */}
+                        <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 bg-blue-50 text-[#0047AB] rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                            <div className="w-10 h-10 bg-blue-50 text-[#0047AB] border border-blue-100/50 rounded-full flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-sm">
                               {item.firstname?.[0]}{item.lastname?.[0]}
                             </div>
                             <div className="min-w-0">
-                              <span className="font-bold text-gray-900 block truncate">{item.firstname} {item.lastname}</span>
-                              {item.profession && (
-                                <span className="text-[10px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded font-medium inline-flex items-center gap-1 mt-0.5">
+                              <span className="font-extrabold text-gray-900 text-sm block truncate">
+                                {item.firstname} {item.lastname}
+                              </span>
+                              {item.profession ? (
+                                <span className="text-[10px] text-blue-700 bg-blue-50/60 px-2 py-0.5 rounded font-semibold inline-flex items-center gap-1 mt-1 border border-blue-100/30">
                                   <Briefcase size={10} className="shrink-0 text-blue-500" /> {item.profession}
                                 </span>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 italic block mt-1">Aucune profession renseignée</span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => toggleExpand(item.id)}
-                              className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
+                              className="p-2 hover:bg-gray-100 rounded-lg text-blue-600 transition-colors"
                               title="Voir les détails"
                             >
-                              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                             </button>
                             <button 
                               onClick={() => handleDelete(item.id, 'join_requests')}
-                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                               title="Supprimer l'inscription"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </div>
 
-                        <div className="text-xs space-y-2 text-gray-600">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin size={12} className="text-gray-400 shrink-0" />
-                            <span>{item.locality || 'N/A'}</span>
+                        {/* Middle Info Block: Custom Structured Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 text-xs text-gray-600">
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-2">
+                              <MapPin size={13} className="text-gray-400 shrink-0 mt-0.5" />
+                              <span className="font-semibold text-gray-700">Localité : <span className="text-gray-900 font-bold">{item.locality || 'N/A'}</span></span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar size={13} className="text-gray-400 shrink-0" />
+                              <span className="text-gray-500">
+                                Date : <span className="font-medium text-gray-700">{item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}</span>
+                              </span>
+                            </div>
                           </div>
-                          <div className="space-y-0.5">
-                            <div className="font-medium text-gray-800 select-all break-all">{item.email}</div>
-                            <div className="text-[11px] text-gray-500 font-semibold select-all">{item.phone}</div>
+                          
+                          <div className="space-y-2 pt-2 sm:pt-0 sm:border-l sm:border-gray-200/60 sm:pl-4">
+                            <div className="flex items-center gap-2">
+                              <Mail size={13} className="text-gray-400 shrink-0" />
+                              <span className="font-medium text-gray-800 select-all break-all">{item.email}</span>
+                            </div>
+                            {item.phone && (
+                              <div className="flex items-center gap-2">
+                                <Phone size={13} className="text-gray-400 shrink-0" />
+                                <span className="text-gray-700 font-semibold select-all">{item.phone}</span>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                        </div>
+
+                        {/* Footer / Badges & Expand Trigger */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+                          <div>
                             {item.engagementType && (
-                              <span className="text-[9px] text-emerald-800 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              <span className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-100/40 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                 {item.engagementType === 'adherent' ? 'Adhérent' : 
                                  item.engagementType === 'sympathisant' ? 'Sympathisant' : 
                                  item.engagementType === 'donateur' ? 'Donateur' : item.engagementType}
                               </span>
                             )}
-                            <span className="text-[9px] text-gray-400 font-bold uppercase">
-                              {item.createdAt?.seconds ? format(item.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
-                            </span>
                           </div>
+                          <button 
+                            onClick={() => toggleExpand(item.id)}
+                            className="text-xs font-bold text-[#0047AB] hover:underline"
+                          >
+                            {isExpanded ? 'Masquer les détails' : 'Voir les détails & motivations'}
+                          </button>
                         </div>
 
+                        {/* Expanded details container */}
                         {isExpanded && (
-                          <div className="pt-3 border-t border-gray-150 space-y-2.5">
-                            <div className="bg-blue-50/5 p-3 rounded-lg border border-gray-100">
-                              <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Type d'engagement souhaité</h5>
-                              <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2 py-0.5 rounded text-[11px] inline-block">
-                                {item.engagementType === 'adherent' ? 'Adhérent actif' : 
-                                 item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
-                                 item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
-                              </span>
-                            </div>
-                            <div>
-                              <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <MessageSquare size={10} className="text-blue-500" /> Message & motivations
-                              </h5>
-                              {item.message?.trim() ? (
-                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 italic text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                  "{item.message}"
-                                </div>
-                              ) : (
-                                <p className="text-[10px] text-gray-400 italic bg-gray-50 p-2 rounded-lg border border-dashed border-gray-200">
-                                  Aucun message d'accompagnement rédigé.
-                                </p>
-                              )}
+                          <div className="pt-3 border-t border-gray-100 text-xs text-gray-700 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="bg-blue-50/10 p-4 rounded-xl border border-blue-100/30 space-y-2.5">
+                                <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Type d'engagement souhaité</h5>
+                                <span className="capitalize font-bold text-[#0047AB] bg-blue-50 border border-blue-100/50 px-2.5 py-1 rounded-full text-[11px] inline-block">
+                                  {item.engagementType === 'adherent' ? 'Adhérent actif' : 
+                                   item.engagementType === 'sympathisant' ? 'Sympathisant réactif' : 
+                                   item.engagementType === 'donateur' ? 'Donateur' : item.engagementType || 'Non spécifié'}
+                                </span>
+                              </div>
+                              <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-2">
+                                <h5 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                  <MessageSquare size={11} className="text-blue-500" />
+                                  Motivations de l'adhérent :
+                                </h5>
+                                {item.message?.trim() ? (
+                                  <div className="bg-white p-3 rounded-lg border border-gray-100 text-xs italic text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                    "{item.message}"
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-gray-400 italic bg-white/40 p-2.5 rounded-lg border border-dashed border-gray-200">
+                                    Aucun message d'accompagnement rédigé.
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )}
@@ -639,8 +674,8 @@ export default function Dashboard() {
                   })}
                 </div>
 
-                {/* Desktop View: Table Layout */}
-                <div className="hidden md:block overflow-x-auto">
+                {/* Desktop View: Styled Full-Width Table Layout */}
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
@@ -816,7 +851,8 @@ export default function Dashboard() {
                       </p>
                       <button 
                         onClick={() => handleDelete(msg.id, 'contact_messages')}
-                        className="p-1.5 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                        className="p-1.5 text-gray-400 lg:text-gray-300 hover:text-red-500 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                        title="Supprimer le message"
                       >
                         <Trash2 size={16} />
                       </button>
