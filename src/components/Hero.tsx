@@ -28,7 +28,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="block"
+              className="block" translate="no"
             >
               Ensemble, construisons
             </motion.span>
@@ -36,7 +36,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[#3b82f6] block mt-1"
+              className="text-[#3b82f6] block mt-1" translate="no"
             >
               l'avenir de nos territoires
             </motion.span>
