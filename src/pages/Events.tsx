@@ -38,7 +38,7 @@ export default function Events() {
   }, []);
 
   return (
-    <div className="pt-24 pb-20 bg-gray-50/50 min-h-screen">
+    <div className="pt-24 pb-20 bg-gray-50/50 min-h-screen relative overflow-hidden">
       <section className="max-w-7xl mx-auto px-4 mb-24 relative">
         <div className="text-center mb-20 relative z-10">
           <motion.div 
