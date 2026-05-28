@@ -21,43 +21,25 @@ export default function Hero() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-[26px] min-[380px]:text-3xl sm:text-4xl md:text-6xl font-extrabold text-white leading-[1.1] mb-6 tracking-tight"
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[26px] min-[380px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.15] mb-6 tracking-tight"
           >
-            <span className="block whitespace-nowrap">
-              {"Ensemble, construisons".split("").map((char, index) => (
-                <motion.span
-                  key={`line1-${index}`}
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.08,
-                  }}
-                  className="inline-block"
-                >
-                  {char === " " ? "\u00A0" : char}
-                </motion.span>
-              ))}
-            </span>
-            <span className="text-blue-500 block whitespace-nowrap">
-              {"l'avenir de nos territoires".split("").map((char, index) => (
-                <motion.span
-                  key={`line2-${index}`}
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: ("Ensemble, construisons".length + index) * 0.08,
-                  }}
-                  className="inline-block"
-                >
-                  {char === " " ? "\u00A0" : char}
-                </motion.span>
-              ))}
-            </span>
+            <motion.span 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="block"
+            >
+              Ensemble, construisons
+            </motion.span>
+            <motion.span 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[#3b82f6] block mt-1"
+            >
+              l'avenir de nos territoires
+            </motion.span>
           </motion.h1>
           
           <motion.p 
